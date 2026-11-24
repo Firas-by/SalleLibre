@@ -29,9 +29,12 @@ Traçabilité complète des interactions asynchrones entre le client web réacti
 
 ### B1. Gestion des Salles Libres (Temps Réel)
 - Visualisation en direct des salles libres selon l'emploi du temps officiel.
+- **Double mode de vue :** Vue en cartes détaillées et **Plan d'étage interactif (SVG Campus Map)** avec coloration dynamique des bâtiments A, B et C en temps réel.
+- **Moteur Temporel de Démonstration (Time-Travel) :** curseur dynamique (08:00 — 20:00) permettant d'observer la transition des créneaux et l'évolution de l'affluence à n'importe quelle heure de la semaine.
 - Filtres combinables : Bâtiment (A, B, C), Capacité minimale, et Présence de prises électriques.
 - Affichage automatique de l'heure du prochain cours programmé et du temps restant disponible.
-- **Élévation :** Algorithme « Meilleur Choix Révision » (`/api/salles/recommandation`) calculant le compromis optimal (temps libre, prises, calme).
+- **Algorithme « Meilleur Choix Révision »** (`/api/salles/recommandation`) calculant le compromis optimal (temps libre, prises, calme).
+- **Thèmes Sombre & Clair :** bascule fluide et ergonomique avec persistance locale (`data-theme`).
 
 ### B2. Gestion des Signalements & Crowdsourcing
 - Signalement par les étudiants connectés (`LIBRE` ou `OCCUPEE`).

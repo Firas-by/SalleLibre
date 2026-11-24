@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SalleLibre - Repérage des Salles Libres de Révision</title>
+  <title>SalleLibre - Système de Repérage & d'Entraide Universitaire</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20width=%2232%22%20height=%2232%22><text y=%2226%22 font-size=%2226%22>🏛️</text></svg>">
 </head>
 <body>
 
@@ -13,28 +14,84 @@
     ⚠️ <span id="offlineBannerText">Mode hors-ligne : Affichage des dernières données enregistrées.</span>
   </div>
 
-  <!-- Header -->
-  <header>
+  <!-- Top Application Bar -->
+  <header class="app-header">
     <div class="header-container">
-      <a href="#" class="brand" onclick="switchTab('salles')">
-        <div class="brand-icon">🏛️</div>
+      <!-- Logo & Brand -->
+      <a href="#" class="brand" onclick="switchTab('salles'); return false;">
+        <div class="brand-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+        </div>
         <div class="brand-text">
-          <h1>SalleLibre</h1>
-          <p id="appSubtitle">Repérage des salles libres de révision</p>
+          <div class="brand-heading">
+            <h1>SalleLibre</h1>
+            <span class="badge-tag">Campus Live</span>
+          </div>
+          <p id="appSubtitle">Repérage des salles libres & entraide collaborative</p>
         </div>
       </a>
 
+      <!-- Campus Live Occupancy Ticker -->
+      <div class="campus-ticker">
+        <div class="ticker-item ticker-free">
+          <span class="ticker-dot dot-free animate-pulse-slow"></span>
+          <span id="tickerFreeLabel" class="ticker-label">Libres :</span>
+          <strong id="tickerFreeCount" class="ticker-num">0</strong>
+        </div>
+        <div class="ticker-divider"></div>
+        <div class="ticker-item ticker-uncertain">
+          <span class="ticker-dot dot-uncertain"></span>
+          <span id="tickerUncertainLabel" class="ticker-label">Incertaines :</span>
+          <strong id="tickerUncertainCount" class="ticker-num">0</strong>
+        </div>
+        <div class="ticker-divider"></div>
+        <div class="ticker-item ticker-occupied">
+          <span class="ticker-dot dot-occupied"></span>
+          <span id="tickerOccupiedLabel" class="ticker-label">Occupées :</span>
+          <strong id="tickerOccupiedCount" class="ticker-num">0</strong>
+        </div>
+      </div>
+
+      <!-- Header Controls: View Toggle, Theme, Lang, Auth -->
       <div class="header-actions">
+        <!-- View Switcher (Grid vs SVG Floor Plan) -->
+        <div class="view-switcher" id="sallesViewSwitcher">
+          <button class="view-btn active" id="btnViewGrid" onclick="setViewMode('grid')" title="Vue en cartes">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"></rect>
+              <rect x="14" y="3" width="7" height="7"></rect>
+              <rect x="14" y="14" width="7" height="7"></rect>
+              <rect x="3" y="14" width="7" height="7"></rect>
+            </svg>
+            <span class="view-label" id="viewGridLabel">Grille</span>
+          </button>
+          <button class="view-btn" id="btnViewMap" onclick="setViewMode('map')" title="Plan interactif des bâtiments">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+              <line x1="8" y1="2" x2="8" y2="18"></line>
+              <line x1="16" y1="6" x2="16" y2="22"></line>
+            </svg>
+            <span class="view-label" id="viewMapLabel">Plan Campus</span>
+          </button>
+        </div>
+
+        <!-- Theme Toggle (Dark / Light) -->
+        <button id="themeToggleBtn" class="icon-btn" onclick="toggleTheme()" title="Basculer le thème">
+          <span id="themeIcon">🌙</span>
+        </button>
+
         <!-- Language Switcher -->
         <button id="langBtn" class="btn btn-outline btn-sm" onclick="toggleLanguage()">
           🌐 <span id="langLabel">EN</span>
         </button>
 
-        <!-- User session badge / Login button -->
-        <div id="userBadge" style="display: none; align-items: center; gap: 0.5rem;">
-          <span id="karmaScore" class="btn btn-sm btn-outline" style="color: #4f46e5; font-weight: 700;">⭐ 100 Karma</span>
-          <span id="userEmail" class="btn btn-sm btn-outline" style="font-size: 0.75rem;">etudiant@univ.tn</span>
-          <button class="btn btn-outline btn-sm" onclick="logout()" title="Déconnexion">🚪</button>
+        <!-- User session / Login -->
+        <div id="userBadge" style="display: none;" class="user-badge-container">
+          <span id="karmaScore" class="karma-pill" title="Score de contribution campus">⭐ 100 Karma</span>
+          <span id="userEmail" class="user-email-label">etudiant1@univ.tn</span>
+          <button class="icon-btn btn-sm" onclick="logout()" title="Déconnexion">🚪</button>
         </div>
         <button id="loginBtn" class="btn btn-primary btn-sm" onclick="openLoginModal()">
           🔑 <span id="loginBtnText">Connexion</span>
@@ -43,8 +100,57 @@
     </div>
   </header>
 
-  <!-- Main Content -->
-  <main>
+  <!-- MASTER TIME-TRAVEL CONTROLLER -->
+  <section class="time-travel-bar">
+    <div class="time-travel-inner">
+      <div class="time-travel-lead">
+        <div class="time-travel-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+        <div>
+          <div class="time-travel-title" id="ttTitle">Simulateur Temporel de Démonstration</div>
+          <div class="time-travel-desc" id="ttDesc">Observez l'affluence et les créneaux évoluer en temps réel</div>
+        </div>
+      </div>
+
+      <!-- Controls: Day, Slider, Presets -->
+      <div class="time-travel-controls">
+        <!-- Day Select -->
+        <div class="time-day-select-wrap">
+          <label for="simDaySelect" id="ttDayLabel">Jour :</label>
+          <select id="simDaySelect" onchange="onSimDayChange(this.value)">
+            <option value="1">Lundi</option>
+            <option value="2">Mardi</option>
+            <option value="3">Mercredi</option>
+            <option value="4">Jeudi</option>
+            <option value="5">Vendredi</option>
+            <option value="6">Samedi</option>
+          </select>
+        </div>
+
+        <!-- Slider -->
+        <div class="time-slider-wrap">
+          <input type="range" id="timeSlider" min="480" max="1200" step="15" value="600" oninput="onTimeSliderInput(this.value)">
+          <div class="time-display-pill" id="simTimeDisplay">10:00</div>
+        </div>
+
+        <!-- Fast Presets -->
+        <div class="time-presets">
+          <button class="preset-chip active" id="presetLive" onclick="setPresetTime('live')">⚡ En Direct</button>
+          <button class="preset-chip" id="presetMatin" onclick="setPresetTime('08:30')">08:30</button>
+          <button class="preset-chip" id="presetMidi" onclick="setPresetTime('12:00')">12:00</button>
+          <button class="preset-chip" id="presetAprem" onclick="setPresetTime('14:30')">14:30</button>
+          <button class="preset-chip" id="presetSoir" onclick="setPresetTime('18:00')">18:00</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content Layout -->
+  <main class="app-main">
     <!-- Navigation Tabs -->
     <nav class="tabs-nav">
       <button class="tab-btn active" id="tabBtnSalles" onclick="switchTab('salles')">
@@ -52,6 +158,7 @@
       </button>
       <button class="tab-btn" id="tabBtnSessions" onclick="switchTab('sessions')">
         🎯 <span id="tabSessionsText">Sessions d'Entraide</span>
+        <span class="tab-counter" id="sessionsTabCounter">0</span>
       </button>
       <button class="tab-btn" id="tabBtnAdmin" onclick="switchTab('admin')">
         ⚙️ <span id="tabAdminText">Administration Scolarité</span>
@@ -62,124 +169,305 @@
     <section id="sectionSalles">
       <!-- Recommandation 'Meilleur Choix' -->
       <div id="recommendationBox" class="rec-banner" style="display: none;">
-        <div class="rec-content">
-          <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.85;">💡 Recommandation Optimale</div>
-          <h2 id="recRoomName">Salle A01 - Bâtiment A</h2>
-          <p id="recRoomDetails">40 places • Prises électriques • Libre jusqu'à 14:00 • Ambiance Silencieuse</p>
+        <div class="rec-badge">
+          <span class="rec-badge-icon">💡</span>
+          <span id="recOptimalLabel">Choix Optimal pour Réviser</span>
         </div>
-        <button class="btn btn-outline btn-sm" style="color: #4f46e5; background: white;" onclick="focusRoomFromRec()">
-          Voir la salle
-        </button>
-      </div>
-
-      <!-- Filtres -->
-      <div class="filters-bar">
-        <div class="filter-group">
-          <label for="filterBatiment">🏢 Bâtiment :</label>
-          <select id="filterBatiment" class="filter-select" onchange="applyFilters()">
-            <option value="ALL">Tous les bâtiments</option>
-            <option value="A">Bâtiment A</option>
-            <option value="B">Bâtiment B</option>
-            <option value="C">Bâtiment C</option>
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <label for="filterCapacite">👥 Capacité min :</label>
-          <select id="filterCapacite" class="filter-select" onchange="applyFilters()">
-            <option value="0">Toutes tailles</option>
-            <option value="25">25+ places</option>
-            <option value="40">40+ places</option>
-            <option value="60">60+ places</option>
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer;">
-            <input type="checkbox" id="filterPrises" onchange="applyFilters()">
-            🔌 Prises électriques requises
-          </label>
-        </div>
-
-        <div class="filter-group" style="margin-left: auto;">
-          <button class="btn btn-outline btn-sm" onclick="fetchSalles(true)">
-            🔄 Actualiser
+        <div class="rec-body">
+          <div class="rec-info">
+            <h2 id="recRoomName">Salle A01 - Bâtiment A</h2>
+            <p id="recRoomDetails">40 places • Prises électriques • Libre jusqu'à 14:00 • Score : 95 pts</p>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="focusRoomFromRec()">
+            <span id="recViewBtn">Localiser la salle</span> →
           </button>
         </div>
       </div>
 
-      <!-- Liste des Salles -->
-      <div id="roomsGrid" class="rooms-grid">
-        <!-- Rempli dynamiquement en JS -->
+      <!-- Filtres & Barre de Recherche Rapide -->
+      <div class="filters-card">
+        <div class="search-box">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="searchInput" placeholder="Rechercher une salle (A01, Amphi, B101...)" oninput="applyFilters()">
+          <kbd class="search-kbd">/</kbd>
+        </div>
+
+        <div class="filter-chips">
+          <span class="filter-label" id="filterBatLabel">Bâtiment :</span>
+          <button class="filter-chip active" data-bat="ALL" onclick="setBatimentFilter('ALL')">Tous</button>
+          <button class="filter-chip" data-bat="A" onclick="setBatimentFilter('A')">Bâtiment A</button>
+          <button class="filter-chip" data-bat="B" onclick="setBatimentFilter('B')">Bâtiment B</button>
+          <button class="filter-chip" data-bat="C" onclick="setBatimentFilter('C')">Bâtiment C</button>
+        </div>
+
+        <div class="filter-options">
+          <div class="filter-group">
+            <label for="filterCapacite" id="filterCapLabel">👥 Capacité min :</label>
+            <select id="filterCapacite" class="filter-select" onchange="applyFilters()">
+              <option value="0">Toutes tailles</option>
+              <option value="25">25+ places</option>
+              <option value="40">40+ places</option>
+              <option value="60">60+ places</option>
+            </select>
+          </div>
+
+          <label class="toggle-control">
+            <input type="checkbox" id="filterPrises" onchange="applyFilters()">
+            <span class="toggle-pill"></span>
+            <span id="filterOutletsLabel">🔌 Prises requises</span>
+          </label>
+
+          <label class="toggle-control">
+            <input type="checkbox" id="filterLibresOnly" onchange="applyFilters()">
+            <span class="toggle-pill"></span>
+            <span id="filterOnlyFreeLabel">🟢 Libres uniquement</span>
+          </label>
+
+          <button class="btn btn-outline btn-sm refresh-btn" onclick="fetchSalles(true)" title="Actualiser les données">
+            <svg id="refreshIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span id="refreshLabel">Actualiser</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- VUE 1 : PLAN INTERACTIF DU CAMPUS (SVG) -->
+      <div id="viewMapContainer" class="campus-map-card" style="display: none;">
+        <div class="map-card-header">
+          <div>
+            <h3 id="mapCardTitle">Plan d'Étage Interactif du Campus</h3>
+            <p id="mapCardSubtitle">Cliquez sur une salle pour consulter son horaire, son ambiance et soumettre un signalement.</p>
+          </div>
+          <div class="map-legend">
+            <span class="legend-item"><span class="legend-dot dot-free"></span> Libre</span>
+            <span class="legend-item"><span class="legend-dot dot-uncertain"></span> Incertaine</span>
+            <span class="legend-item"><span class="legend-dot dot-occupied"></span> Occupée</span>
+          </div>
+        </div>
+
+        <div class="svg-map-wrapper">
+          <svg id="campusSvg" viewBox="0 0 960 520" preserveAspectRatio="xMidYMid meet" class="campus-svg">
+            <defs>
+              <!-- Glowing shadow filters for active statuses -->
+              <filter id="glow-free" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#10b981" flood-opacity="0.35" />
+              </filter>
+              <filter id="glow-uncertain" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#f59e0b" flood-opacity="0.35" />
+              </filter>
+              <filter id="glow-occupied" x="-20%" y="-20%" width="140%" height="140%">
+                <feDropShadow dx="0" dy="2" stdDeviation="6" flood-color="#f43f5e" flood-opacity="0.35" />
+              </filter>
+            </defs>
+
+            <!-- Campus Base Ground -->
+            <rect x="10" y="10" width="940" height="500" rx="20" class="svg-ground" />
+
+            <!-- Pathways / Circulation Corridors -->
+            <path d="M 320 260 L 640 260" class="svg-corridor" stroke-width="40" stroke-linecap="round" />
+            <path d="M 180 200 L 180 340" class="svg-corridor" stroke-width="30" stroke-linecap="round" />
+            <path d="M 480 180 L 480 340" class="svg-corridor" stroke-width="30" stroke-linecap="round" />
+            <path d="M 780 200 L 780 340" class="svg-corridor" stroke-width="30" stroke-linecap="round" />
+            <circle cx="480" cy="260" r="45" class="svg-plaza" />
+            <text x="480" y="264" class="svg-plaza-label" text-anchor="middle">Hall Central</text>
+
+            <!-- ================= WING A (BÂTIMENT A) ================= -->
+            <g class="svg-building-group" id="wing-A">
+              <!-- Building A outline -->
+              <rect x="40" y="40" width="260" height="440" rx="14" class="svg-building-contour" />
+              <text x="170" y="70" class="svg-building-title" text-anchor="middle">BÂTIMENT A (Sciences & Info)</text>
+
+              <!-- Room A01 -->
+              <g class="svg-room-interactive" id="map-A01" onclick="openRoomDetailModal('A01')">
+                <rect x="60" y="90" width="220" height="90" rx="10" class="svg-room-rect status-LIBRE" />
+                <circle cx="85" cy="115" r="5" class="svg-status-dot" />
+                <text x="100" y="120" class="svg-room-name">Salle A01</text>
+                <text x="100" y="142" class="svg-room-meta">👥 35 pl • 🔌 Prises</text>
+                <text x="100" y="162" class="svg-room-status-text">LIBRE</text>
+              </g>
+
+              <!-- Room A02 -->
+              <g class="svg-room-interactive" id="map-A02" onclick="openRoomDetailModal('A02')">
+                <rect x="60" y="200" width="220" height="90" rx="10" class="svg-room-rect status-LIBRE" />
+                <circle cx="85" cy="225" r="5" class="svg-status-dot" />
+                <text x="100" y="230" class="svg-room-name">Salle A02</text>
+                <text x="100" y="252" class="svg-room-meta">👥 40 pl • 🔌 Prises</text>
+                <text x="100" y="272" class="svg-room-status-text">LIBRE</text>
+              </g>
+
+              <!-- Room A105 -->
+              <g class="svg-room-interactive" id="map-A105" onclick="openRoomDetailModal('A105')">
+                <rect x="60" y="310" width="220" height="110" rx="10" class="svg-room-rect status-OCCUPEE" />
+                <circle cx="85" cy="335" r="5" class="svg-status-dot" />
+                <text x="100" y="340" class="svg-room-name">Salle A105</text>
+                <text x="100" y="362" class="svg-room-meta">👥 60 pl • Sans prises</text>
+                <text x="100" y="385" class="svg-room-status-text">OCCUPÉE</text>
+              </g>
+            </g>
+
+            <!-- ================= WING B (BÂTIMENT B) ================= -->
+            <g class="svg-building-group" id="wing-B">
+              <!-- Building B outline -->
+              <rect x="350" y="40" width="260" height="440" rx="14" class="svg-building-contour" />
+              <text x="480" y="70" class="svg-building-title" text-anchor="middle">BÂTIMENT B (Génie Logiciel)</text>
+
+              <!-- Room B101 -->
+              <g class="svg-room-interactive" id="map-B101" onclick="openRoomDetailModal('B101')">
+                <rect x="370" y="90" width="220" height="90" rx="10" class="svg-room-rect status-LIBRE" />
+                <circle cx="395" cy="115" r="5" class="svg-status-dot" />
+                <text x="410" y="120" class="svg-room-name">Salle B101</text>
+                <text x="410" y="142" class="svg-room-meta">👥 25 pl • 🔌 Prises</text>
+                <text x="410" y="162" class="svg-room-status-text">LIBRE</text>
+              </g>
+
+              <!-- Courtyard bridge corridor is behind -->
+
+              <!-- Room B102 -->
+              <g class="svg-room-interactive" id="map-B102" onclick="openRoomDetailModal('B102')">
+                <rect x="370" y="200" width="220" height="90" rx="10" class="svg-room-rect status-INCERTAINE" />
+                <circle cx="395" cy="225" r="5" class="svg-status-dot" />
+                <text x="410" y="230" class="svg-room-name">Salle B102</text>
+                <text x="410" y="252" class="svg-room-meta">👥 50 pl • 🔌 Prises</text>
+                <text x="410" y="272" class="svg-room-status-text">INCERTAINE</text>
+              </g>
+
+              <!-- Room B204 -->
+              <g class="svg-room-interactive" id="map-B204" onclick="openRoomDetailModal('B204')">
+                <rect x="370" y="310" width="220" height="110" rx="10" class="svg-room-rect status-LIBRE" />
+                <circle cx="395" cy="335" r="5" class="svg-status-dot" />
+                <text x="410" y="340" class="svg-room-name">Salle B204</text>
+                <text x="410" y="362" class="svg-room-meta">👥 30 pl • Sans prises</text>
+                <text x="410" y="385" class="svg-room-status-text">LIBRE</text>
+              </g>
+            </g>
+
+            <!-- ================= WING C (BÂTIMENT C) ================= -->
+            <g class="svg-building-group" id="wing-C">
+              <!-- Building C outline -->
+              <rect x="660" y="40" width="260" height="440" rx="14" class="svg-building-contour" />
+              <text x="790" y="70" class="svg-building-title" text-anchor="middle">BÂTIMENT C (Amphis & Math)</text>
+
+              <!-- Room C101 (Grand Amphi) -->
+              <g class="svg-room-interactive" id="map-C101" onclick="openRoomDetailModal('C101')">
+                <rect x="680" y="90" width="220" height="110" rx="10" class="svg-room-rect status-LIBRE" />
+                <circle cx="705" cy="115" r="5" class="svg-status-dot" />
+                <text x="720" y="120" class="svg-room-name">Amphi C101</text>
+                <text x="720" y="142" class="svg-room-meta">👥 80 pl • 🔌 Prises</text>
+                <text x="720" y="165" class="svg-room-status-text">LIBRE</text>
+              </g>
+
+              <!-- Room C203 -->
+              <g class="svg-room-interactive" id="map-C203" onclick="openRoomDetailModal('C203')">
+                <rect x="680" y="215" width="220" height="90" rx="10" class="svg-room-rect status-LIBRE" />
+                <circle cx="705" cy="240" r="5" class="svg-status-dot" />
+                <text x="720" y="245" class="svg-room-name">Salle C203</text>
+                <text x="720" y="267" class="svg-room-meta">👥 45 pl • 🔌 Prises</text>
+                <text x="720" y="287" class="svg-room-status-text">LIBRE</text>
+              </g>
+
+              <!-- Room C205 -->
+              <g class="svg-room-interactive" id="map-C205" onclick="openRoomDetailModal('C205')">
+                <rect x="680" y="320" width="220" height="100" rx="10" class="svg-room-rect status-LIBRE" />
+                <circle cx="705" cy="345" r="5" class="svg-status-dot" />
+                <text x="720" y="350" class="svg-room-name">Salle C205</text>
+                <text x="720" y="372" class="svg-room-meta">👥 20 pl • Sans prises</text>
+                <text x="720" y="392" class="svg-room-status-text">LIBRE</text>
+              </g>
+            </g>
+          </svg>
+        </div>
+      </div>
+
+      <!-- VUE 2 : GRILLE DES CARTES DE SALLES -->
+      <div id="viewGridContainer">
+        <div id="roomsGrid" class="rooms-grid">
+          <!-- Dynamically populated in JS -->
+        </div>
       </div>
     </section>
 
     <!-- SECTION 2: SESSIONS D'ENTRAIDE (STUDY BEACONS) -->
     <section id="sectionSessions" style="display: none;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+      <div class="sessions-header">
         <div>
-          <h2 style="font-size: 1.25rem;">Sessions d'Entraide Collaboratives</h2>
-          <p style="font-size: 0.85rem; color: var(--text-muted);">Rejoignez d'autres étudiants pour réviser ensemble ou proposez une table dans une salle libre.</p>
+          <h2 id="sessionsTitle">Sessions d'Entraide Collaboratives (Study Beacons)</h2>
+          <p id="sessionsSubtitle" class="text-muted">Rejoignez une table de révision partagée ou proposez vos places disponibles pour travailler en groupe.</p>
         </div>
         <button class="btn btn-primary" onclick="openCreateSessionModal()">
-          ➕ Lancer une Session (+5 Karma)
+          ➕ <span id="createSessionBtnText">Lancer une Session (+5 Karma)</span>
         </button>
       </div>
 
-      <div id="sessionsGrid" class="rooms-grid">
-        <!-- Rempli dynamiquement en JS -->
+      <div id="sessionsGrid" class="sessions-grid">
+        <!-- Dynamically populated in JS -->
       </div>
     </section>
 
     <!-- SECTION 3: ADMINISTRATION SCOLARITE -->
     <section id="sectionAdmin" style="display: none;">
+      <!-- Diagnostic CSV Importation -->
       <div class="admin-card">
-        <h3>📂 Importation des Emplois du Temps (CSV)</h3>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
-          Mettez à jour la grille des créneaux officiels. Le système valide rigoureusement chaque ligne et rejette l'import en cas d'anomalie horaire ou de salle inexistante.
-        </p>
-
-        <!-- Zone de dépôt CSV -->
-        <div class="csv-dropzone" onclick="document.getElementById('csvFileInput').click()">
-          <input type="file" id="csvFileInput" accept=".csv" style="display: none;" onchange="handleCSVUpload(this.files[0])">
-          <p style="font-size: 1.25rem; margin-bottom: 0.5rem;">📄 Cliquez pour sélectionner un fichier CSV</p>
-          <p style="font-size: 0.8rem; color: var(--text-muted);">Format attendu : salle,jour,heureDebut,heureFin,matiere</p>
+        <div class="admin-card-header">
+          <div class="admin-card-icon">📂</div>
+          <div>
+            <h3>Importation des Emplois du Temps (CSV)</h3>
+            <p class="text-muted">Mettez à jour les créneaux officiels. Le moteur valide rigoureusement la syntaxe, la chronologie horaire et l'existence des salles.</p>
+          </div>
         </div>
 
-        <!-- Boutons de test rapide démo -->
-        <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <div class="csv-dropzone" onclick="document.getElementById('csvFileInput').click()">
+          <input type="file" id="csvFileInput" accept=".csv" style="display: none;" onchange="handleCSVUpload(this.files[0])">
+          <div class="dropzone-icon">📄</div>
+          <p class="dropzone-text">Glissez-déposez votre fichier CSV ou cliquez pour parcourir</p>
+          <span class="dropzone-hint">Format attendu : salle,jour,heureDebut,heureFin,matiere</span>
+        </div>
+
+        <div class="admin-test-actions">
           <button class="btn btn-outline btn-sm" onclick="testUploadSample(false)">
             🧪 Tester avec CSV Valide (10 créneaux)
           </button>
-          <button class="btn btn-outline btn-sm" style="color: #dc2626; border-color: #fca5a5;" onclick="testUploadSample(true)">
+          <button class="btn btn-outline btn-sm btn-danger" onclick="testUploadSample(true)">
             ⚠️ Tester avec CSV Invalide (Diagnostic Ligne 4)
           </button>
         </div>
 
-        <div id="csvResultMsg" style="margin-top: 1rem;"></div>
+        <div id="csvResultMsg" class="csv-result-container"></div>
       </div>
 
       <!-- Heatmap Prévisionnelle -->
       <div class="admin-card">
-        <h3>📊 Matrice Prévisionnelle d'Affluence (Heatmap Campus)</h3>
-        <p style="font-size: 0.85rem; color: var(--text-muted);">
-          Taux d'occupation estimé par tranche horaire pour l'ensemble des bâtiments universitaires.
-        </p>
-        <div id="heatmapContainer" style="overflow-x: auto;">
-          <!-- Rempli en JS -->
+        <div class="admin-card-header">
+          <div class="admin-card-icon">📊</div>
+          <div>
+            <h3>Matrice Prévisionnelle d'Affluence (Heatmap Campus)</h3>
+            <p class="text-muted">Taux d'occupation estimé par tranche horaire sur l'ensemble de la semaine.</p>
+          </div>
+        </div>
+        <div id="heatmapContainer" class="heatmap-wrapper">
+          <!-- Dynamically populated in JS -->
         </div>
       </div>
 
-      <!-- Conformité RGPD -->
+      <!-- RGPD & Gouvernance -->
       <div class="admin-card">
-        <h3>🛡️ Gouvernance des Données & Purge RGPD</h3>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
-          Conformément au cahier des charges, les signalements de plus de 24h sont automatiquement anonymisés. Vous pouvez également déclencher une purge manuelle.
-        </p>
-        <button class="btn btn-outline btn-sm" onclick="triggerRgpdPurge()">
-          🧹 Exécuter la purge RGPD maintenant
-        </button>
-        <div id="rgpdResultMsg" style="margin-top: 0.5rem;"></div>
+        <div class="admin-card-header">
+          <div class="admin-card-icon">🛡️</div>
+          <div>
+            <h3>Gouvernance des Données & Purge RGPD (NFR-12)</h3>
+            <p class="text-muted">Anonymisation irréversible des signalements de plus de 24 heures pour garantir la confidentialité des étudiants.</p>
+          </div>
+        </div>
+        <div class="rgpd-actions">
+          <button class="btn btn-outline btn-sm" onclick="triggerRgpdPurge()">
+            🧹 Exécuter la purge RGPD maintenant
+          </button>
+          <span class="rgpd-status-pill">Cron automatique actif (1h)</span>
+        </div>
+        <div id="rgpdResultMsg" class="rgpd-result-msg"></div>
       </div>
     </section>
   </main>
@@ -197,7 +485,7 @@
       <div class="form-group">
         <label>Adresse E-mail Institutionnelle :</label>
         <input type="email" id="loginEmail" class="form-control" placeholder="nom@univ.tn" value="etudiant1@univ.tn">
-        <small style="color: var(--text-muted); font-size: 0.75rem;">Seules les adresses universitaires (@univ.tn) sont autorisées.</small>
+        <small class="form-hint">Seules les adresses universitaires (@univ.tn) sont autorisées.</small>
       </div>
 
       <div class="form-group">
@@ -206,14 +494,14 @@
       </div>
 
       <!-- Quick demo accounts -->
-      <div style="background: #f8fafc; border-radius: 6px; padding: 0.5rem; margin-bottom: 1rem; font-size: 0.75rem;">
+      <div class="demo-accounts-box">
         <strong>Comptes de test rapide :</strong><br>
-        <a href="#" onclick="fillLogin('etudiant1@univ.tn','etudiant123'); return false;">Étudiant 1</a> |
-        <a href="#" onclick="fillLogin('etudiant2@univ.tn','etudiant123'); return false;">Étudiant 2</a> |
-        <a href="#" onclick="fillLogin('admin@univ.tn','admin123'); return false;">Admin Scolarité</a>
+        <a href="#" onclick="fillLogin('etudiant1@univ.tn','etudiant123'); return false;">🎓 Étudiant 1 (Sarra)</a> • 
+        <a href="#" onclick="fillLogin('etudiant2@univ.tn','etudiant123'); return false;">🎓 Étudiant 2 (Mohamed)</a> • 
+        <a href="#" onclick="fillLogin('admin@univ.tn','admin123'); return false;">🔑 Admin Scolarité</a>
       </div>
 
-      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+      <div class="modal-footer">
         <button class="btn btn-outline" onclick="closeModal('loginModal')">Annuler</button>
         <button class="btn btn-primary" onclick="submitLogin()">Se connecter</button>
       </div>
@@ -232,17 +520,19 @@
 
       <div class="form-group">
         <label>Salle sélectionnée :</label>
-        <input type="text" id="signalSalleNumero" class="form-control" readonly>
+        <input type="text" id="signalSalleNumero" class="form-control form-control-readonly" readonly>
       </div>
 
       <div class="form-group">
         <label>État constaté sur place :</label>
-        <div style="display: flex; gap: 0.5rem; margin-top: 0.3rem;">
-          <label style="flex: 1; border: 1px solid var(--free-border); background: var(--free-bg); padding: 0.6rem; border-radius: 8px; cursor: pointer; text-align: center; font-weight: 600; color: var(--free-text);">
-            <input type="radio" name="signalEtat" value="LIBRE" checked> 🟢 Libre
+        <div class="signal-etat-toggle">
+          <label class="signal-option signal-free">
+            <input type="radio" name="signalEtat" value="LIBRE" checked>
+            <span>🟢 Libre</span>
           </label>
-          <label style="flex: 1; border: 1px solid var(--occ-border); background: var(--occ-bg); padding: 0.6rem; border-radius: 8px; cursor: pointer; text-align: center; font-weight: 600; color: var(--occ-text);">
-            <input type="radio" name="signalEtat" value="OCCUPEE"> 🔴 Occupée
+          <label class="signal-option signal-occ">
+            <input type="radio" name="signalEtat" value="OCCUPEE">
+            <span>🔴 Occupée</span>
           </label>
         </div>
       </div>
@@ -256,13 +546,13 @@
         </select>
       </div>
 
-      <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem;">
-        ⏱️ Quota anti-spam : 1 signalement par salle toutes les 10 minutes par étudiant.
+      <div class="anti-spam-hint">
+        ⏱️ Quota anti-spam : 1 signalement par salle toutes les 10 minutes par étudiant. (+5 Karma par confirmation)
       </div>
 
-      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+      <div class="modal-footer">
         <button class="btn btn-outline" onclick="closeModal('signalModal')">Annuler</button>
-        <button class="btn btn-primary" onclick="submitSignalement()">Confirmer le signalement</button>
+        <button class="btn btn-primary" onclick="submitSignalement()">Confirmer le signalement (+5 pts)</button>
       </div>
     </div>
   </div>
@@ -280,7 +570,7 @@
       <div class="form-group">
         <label>Salle :</label>
         <select id="sessionSalleSelect" class="form-control">
-          <!-- Rempli en JS -->
+          <!-- Populated in JS -->
         </select>
       </div>
 
@@ -294,12 +584,63 @@
         <input type="number" id="sessionPlaces" class="form-control" min="1" max="10" value="3">
       </div>
 
-      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+      <div class="modal-footer">
         <button class="btn btn-outline" onclick="closeModal('sessionModal')">Annuler</button>
         <button class="btn btn-primary" onclick="submitCreateSession()">Lancer la session (+5 Karma)</button>
       </div>
     </div>
   </div>
+
+  <!-- MODAL: Détails Complets de Salle (Vue Map / Drawer) -->
+  <div id="roomDetailModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <h3 id="roomDetailTitle">Salle A01</h3>
+          <span id="roomDetailStatusBadge" class="status-badge LIBRE">LIBRE</span>
+        </div>
+        <button class="modal-close" onclick="closeModal('roomDetailModal')">&times;</button>
+      </div>
+
+      <div class="room-detail-body">
+        <div class="room-spec-grid">
+          <div class="spec-card">
+            <span class="spec-label">Bâtiment</span>
+            <strong id="roomDetailBatiment" class="spec-val">A</strong>
+          </div>
+          <div class="spec-card">
+            <span class="spec-label">Capacité</span>
+            <strong id="roomDetailCapacite" class="spec-val">40 places</strong>
+          </div>
+          <div class="spec-card">
+            <span class="spec-label">Prises Électriques</span>
+            <strong id="roomDetailPrises" class="spec-val">🔌 Oui</strong>
+          </div>
+          <div class="spec-card">
+            <span class="spec-label">Ambiance Récente</span>
+            <strong id="roomDetailAmbiance" class="spec-val">🤫 Silencieuse</strong>
+          </div>
+        </div>
+
+        <div class="schedule-box">
+          <div class="schedule-heading">📅 Planning de la journée</div>
+          <div id="roomDetailNextClass" class="schedule-next">Aucun autre cours aujourd'hui</div>
+        </div>
+
+        <div id="roomDetailBeaconBox" class="room-beacon-box" style="display: none;">
+          <!-- Beacon info -->
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="openSignalModal(state.selectedRoomNum)">Signaler l'état réel</button>
+        <button class="btn btn-primary" onclick="openCreateSessionForRoom(state.selectedRoomNum)">Lancer session d'entraide</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="toast-container"></div>
 
   <!-- Scripts -->
   <script src="app.js"></script>
