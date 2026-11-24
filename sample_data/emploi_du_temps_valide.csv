@@ -1,0 +1,11 @@
+salle,jour,heureDebut,heureFin,matiere
+A01,Lundi,08:30,10:00,Génie Logiciel Avancé
+A01,Lundi,10:15,11:45,Systèmes Distribués
+A01,Lundi,14:00,16:30,Atelier Génie Logiciel
+A02,Lundi,08:30,11:45,Algorithmique et Graphes
+B101,Lundi,10:15,13:15,Conception UML
+B102,Mardi,08:30,10:00,Bases de Données Relationnelles
+C101,Mardi,14:00,17:15,Architecture Cloud et Microservices
+C203,Mercredi,08:30,11:45,Sécurité Réseaux
+A01,Jeudi,10:15,11:45,Intelligence Artificielle
+B101,Vendredi,14:00,16:00,Management Agile

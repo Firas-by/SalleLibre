@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SalleLibre - Repérage des Salles Libres de Révision</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Offline Warning Banner -->
+  <div id="offlineBanner" class="offline-banner">
+    ⚠️ <span id="offlineBannerText">Mode hors-ligne : Affichage des dernières données enregistrées.</span>
+  </div>
+
+  <!-- Header -->
+  <header>
+    <div class="header-container">
+      <a href="#" class="brand" onclick="switchTab('salles')">
+        <div class="brand-icon">🏛️</div>
+        <div class="brand-text">
+          <h1>SalleLibre</h1>
+          <p id="appSubtitle">Repérage des salles libres de révision</p>
+        </div>
+      </a>
+
+      <div class="header-actions">
+        <!-- Language Switcher -->
+        <button id="langBtn" class="btn btn-outline btn-sm" onclick="toggleLanguage()">
+          🌐 <span id="langLabel">EN</span>
+        </button>
+
+        <!-- User session badge / Login button -->
+        <div id="userBadge" style="display: none; align-items: center; gap: 0.5rem;">
+          <span id="karmaScore" class="btn btn-sm btn-outline" style="color: #4f46e5; font-weight: 700;">⭐ 100 Karma</span>
+          <span id="userEmail" class="btn btn-sm btn-outline" style="font-size: 0.75rem;">etudiant@univ.tn</span>
+          <button class="btn btn-outline btn-sm" onclick="logout()" title="Déconnexion">🚪</button>
+        </div>
+        <button id="loginBtn" class="btn btn-primary btn-sm" onclick="openLoginModal()">
+          🔑 <span id="loginBtnText">Connexion</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+    <!-- Navigation Tabs -->
+    <nav class="tabs-nav">
+      <button class="tab-btn active" id="tabBtnSalles" onclick="switchTab('salles')">
+        📍 <span id="tabSallesText">Salles en Direct</span>
+      </button>
+      <button class="tab-btn" id="tabBtnSessions" onclick="switchTab('sessions')">
+        🎯 <span id="tabSessionsText">Sessions d'Entraide</span>
+      </button>
+      <button class="tab-btn" id="tabBtnAdmin" onclick="switchTab('admin')">
+        ⚙️ <span id="tabAdminText">Administration Scolarité</span>
+      </button>
+    </nav>
+
+    <!-- SECTION 1: SALLES EN DIRECT -->
+    <section id="sectionSalles">
+      <!-- Recommandation 'Meilleur Choix' -->
+      <div id="recommendationBox" class="rec-banner" style="display: none;">
+        <div class="rec-content">
+          <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.85;">💡 Recommandation Optimale</div>
+          <h2 id="recRoomName">Salle A01 - Bâtiment A</h2>
+          <p id="recRoomDetails">40 places • Prises électriques • Libre jusqu'à 14:00 • Ambiance Silencieuse</p>
+        </div>
+        <button class="btn btn-outline btn-sm" style="color: #4f46e5; background: white;" onclick="focusRoomFromRec()">
+          Voir la salle
+        </button>
+      </div>
+
+      <!-- Filtres -->
+      <div class="filters-bar">
+        <div class="filter-group">
+          <label for="filterBatiment">🏢 Bâtiment :</label>
+          <select id="filterBatiment" class="filter-select" onchange="applyFilters()">
+            <option value="ALL">Tous les bâtiments</option>
+            <option value="A">Bâtiment A</option>
+            <option value="B">Bâtiment B</option>
+            <option value="C">Bâtiment C</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="filterCapacite">👥 Capacité min :</label>
+          <select id="filterCapacite" class="filter-select" onchange="applyFilters()">
+            <option value="0">Toutes tailles</option>
+            <option value="25">25+ places</option>
+            <option value="40">40+ places</option>
+            <option value="60">60+ places</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label style="display: flex; align-items: center; gap: 0.3rem; cursor: pointer;">
+            <input type="checkbox" id="filterPrises" onchange="applyFilters()">
+            🔌 Prises électriques requises
+          </label>
+        </div>
+
+        <div class="filter-group" style="margin-left: auto;">
+          <button class="btn btn-outline btn-sm" onclick="fetchSalles(true)">
+            🔄 Actualiser
+          </button>
+        </div>
+      </div>
+
+      <!-- Liste des Salles -->
+      <div id="roomsGrid" class="rooms-grid">
+        <!-- Rempli dynamiquement en JS -->
+      </div>
+    </section>
+
+    <!-- SECTION 2: SESSIONS D'ENTRAIDE (STUDY BEACONS) -->
+    <section id="sectionSessions" style="display: none;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <div>
+          <h2 style="font-size: 1.25rem;">Sessions d'Entraide Collaboratives</h2>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Rejoignez d'autres étudiants pour réviser ensemble ou proposez une table dans une salle libre.</p>
+        </div>
+        <button class="btn btn-primary" onclick="openCreateSessionModal()">
+          ➕ Lancer une Session (+5 Karma)
+        </button>
+      </div>
+
+      <div id="sessionsGrid" class="rooms-grid">
+        <!-- Rempli dynamiquement en JS -->
+      </div>
+    </section>
+
+    <!-- SECTION 3: ADMINISTRATION SCOLARITE -->
+    <section id="sectionAdmin" style="display: none;">
+      <div class="admin-card">
+        <h3>📂 Importation des Emplois du Temps (CSV)</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+          Mettez à jour la grille des créneaux officiels. Le système valide rigoureusement chaque ligne et rejette l'import en cas d'anomalie horaire ou de salle inexistante.
+        </p>
+
+        <!-- Zone de dépôt CSV -->
+        <div class="csv-dropzone" onclick="document.getElementById('csvFileInput').click()">
+          <input type="file" id="csvFileInput" accept=".csv" style="display: none;" onchange="handleCSVUpload(this.files[0])">
+          <p style="font-size: 1.25rem; margin-bottom: 0.5rem;">📄 Cliquez pour sélectionner un fichier CSV</p>
+          <p style="font-size: 0.8rem; color: var(--text-muted);">Format attendu : salle,jour,heureDebut,heureFin,matiere</p>
+        </div>
+
+        <!-- Boutons de test rapide démo -->
+        <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button class="btn btn-outline btn-sm" onclick="testUploadSample(false)">
+            🧪 Tester avec CSV Valide (10 créneaux)
+          </button>
+          <button class="btn btn-outline btn-sm" style="color: #dc2626; border-color: #fca5a5;" onclick="testUploadSample(true)">
+            ⚠️ Tester avec CSV Invalide (Diagnostic Ligne 4)
+          </button>
+        </div>
+
+        <div id="csvResultMsg" style="margin-top: 1rem;"></div>
+      </div>
+
+      <!-- Heatmap Prévisionnelle -->
+      <div class="admin-card">
+        <h3>📊 Matrice Prévisionnelle d'Affluence (Heatmap Campus)</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted);">
+          Taux d'occupation estimé par tranche horaire pour l'ensemble des bâtiments universitaires.
+        </p>
+        <div id="heatmapContainer" style="overflow-x: auto;">
+          <!-- Rempli en JS -->
+        </div>
+      </div>
+
+      <!-- Conformité RGPD -->
+      <div class="admin-card">
+        <h3>🛡️ Gouvernance des Données & Purge RGPD</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+          Conformément au cahier des charges, les signalements de plus de 24h sont automatiquement anonymisés. Vous pouvez également déclencher une purge manuelle.
+        </p>
+        <button class="btn btn-outline btn-sm" onclick="triggerRgpdPurge()">
+          🧹 Exécuter la purge RGPD maintenant
+        </button>
+        <div id="rgpdResultMsg" style="margin-top: 0.5rem;"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL: Authentification -->
+  <div id="loginModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="modalLoginTitle">Connexion Institutionnelle</h3>
+        <button class="modal-close" onclick="closeModal('loginModal')">&times;</button>
+      </div>
+
+      <div class="alert alert-error" id="loginError" style="display: none;"></div>
+
+      <div class="form-group">
+        <label>Adresse E-mail Institutionnelle :</label>
+        <input type="email" id="loginEmail" class="form-control" placeholder="nom@univ.tn" value="etudiant1@univ.tn">
+        <small style="color: var(--text-muted); font-size: 0.75rem;">Seules les adresses universitaires (@univ.tn) sont autorisées.</small>
+      </div>
+
+      <div class="form-group">
+        <label>Mot de passe :</label>
+        <input type="password" id="loginPassword" class="form-control" value="etudiant123">
+      </div>
+
+      <!-- Quick demo accounts -->
+      <div style="background: #f8fafc; border-radius: 6px; padding: 0.5rem; margin-bottom: 1rem; font-size: 0.75rem;">
+        <strong>Comptes de test rapide :</strong><br>
+        <a href="#" onclick="fillLogin('etudiant1@univ.tn','etudiant123'); return false;">Étudiant 1</a> |
+        <a href="#" onclick="fillLogin('etudiant2@univ.tn','etudiant123'); return false;">Étudiant 2</a> |
+        <a href="#" onclick="fillLogin('admin@univ.tn','admin123'); return false;">Admin Scolarité</a>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button class="btn btn-outline" onclick="closeModal('loginModal')">Annuler</button>
+        <button class="btn btn-primary" onclick="submitLogin()">Se connecter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Signalement d'état réel -->
+  <div id="signalModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="signalModalTitle">Signaler l'état réel de la salle</h3>
+        <button class="modal-close" onclick="closeModal('signalModal')">&times;</button>
+      </div>
+
+      <div class="alert alert-error" id="signalError" style="display: none;"></div>
+
+      <div class="form-group">
+        <label>Salle sélectionnée :</label>
+        <input type="text" id="signalSalleNumero" class="form-control" readonly>
+      </div>
+
+      <div class="form-group">
+        <label>État constaté sur place :</label>
+        <div style="display: flex; gap: 0.5rem; margin-top: 0.3rem;">
+          <label style="flex: 1; border: 1px solid var(--free-border); background: var(--free-bg); padding: 0.6rem; border-radius: 8px; cursor: pointer; text-align: center; font-weight: 600; color: var(--free-text);">
+            <input type="radio" name="signalEtat" value="LIBRE" checked> 🟢 Libre
+          </label>
+          <label style="flex: 1; border: 1px solid var(--occ-border); background: var(--occ-bg); padding: 0.6rem; border-radius: 8px; cursor: pointer; text-align: center; font-weight: 600; color: var(--occ-text);">
+            <input type="radio" name="signalEtat" value="OCCUPEE"> 🔴 Occupée
+          </label>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Ambiance sonore :</label>
+        <select id="signalAmbiance" class="form-control">
+          <option value="SILENCIEUSE">🤫 Silencieuse (Idéal révision solitaire)</option>
+          <option value="MODEREE">🗣️ Modérée (Discussions à voix basse)</option>
+          <option value="GROUPE">👥 Groupe (Travail collaboratif actif)</option>
+        </select>
+      </div>
+
+      <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 1rem;">
+        ⏱️ Quota anti-spam : 1 signalement par salle toutes les 10 minutes par étudiant.
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button class="btn btn-outline" onclick="closeModal('signalModal')">Annuler</button>
+        <button class="btn btn-primary" onclick="submitSignalement()">Confirmer le signalement</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Lancer une Session d'Entraide -->
+  <div id="sessionModal" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>🎯 Lancer une Session d'Entraide</h3>
+        <button class="modal-close" onclick="closeModal('sessionModal')">&times;</button>
+      </div>
+
+      <div class="alert alert-error" id="sessionError" style="display: none;"></div>
+
+      <div class="form-group">
+        <label>Salle :</label>
+        <select id="sessionSalleSelect" class="form-control">
+          <!-- Rempli en JS -->
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Matière / Sujet de révision :</label>
+        <input type="text" id="sessionMatiere" class="form-control" placeholder="Ex: Génie Logiciel, Algèbre, BD...">
+      </div>
+
+      <div class="form-group">
+        <label>Nombre de places restantes à proposer :</label>
+        <input type="number" id="sessionPlaces" class="form-control" min="1" max="10" value="3">
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.5rem;">
+        <button class="btn btn-outline" onclick="closeModal('sessionModal')">Annuler</button>
+        <button class="btn btn-primary" onclick="submitCreateSession()">Lancer la session (+5 Karma)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="app.js"></script>
+</body>
+</html>

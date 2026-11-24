@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  sallelibre-server:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sallelibre-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+      - JWT_SECRET=salle_libre_prod_token_univ_2026
+      - INSTITUTIONAL_EMAIL_DOMAINS=univ.tn,institution.tn,ensi.rnu.tn
+    volumes:
+      - sallelibre-data:/app/data
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  sallelibre-data:
+    driver: local

@@ -1,0 +1,127 @@
+@startuml SalleLibre_Class_Diagram
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam roundcorner 10
+skinparam shadowing true
+skinparam handwritten false
+skinparam classAttributeIconSize 0
+
+enum Role {
+  ETUDIANT
+  ADMINISTRATEUR
+}
+
+enum EtatSignalement {
+  LIBRE
+  OCCUPEE
+}
+
+enum EtatOccupation {
+  LIBRE
+  OCCUPEE
+  INCERTAINE
+}
+
+enum AmbianceSonore {
+  SILENCIEUSE
+  MODEREE
+  GROUPE
+}
+
+class Salle {
+  - String numero
+  - String batiment
+  - int capacite
+  - boolean prises
+  + getNumero(): String
+  + getBatiment(): String
+  + getCapacite(): int
+  + hasPrises(): boolean
+  + getStatutActuel(now: DateTime): EtatOccupation
+  + getProchainCours(now: DateTime): Creneau
+  + getSessionsActives(): List<SessionEtude>
+}
+
+class Creneau {
+  - int id
+  - String salleNumero
+  - int jour
+  - String heureDebut
+  - String heureFin
+  - String matiere
+  + isEnCours(now: DateTime): boolean
+  + isFutur(now: DateTime): boolean
+  + getDureeMinutes(): int
+}
+
+class Signalement {
+  - int id
+  - String salleNumero
+  - String etudiantId
+  - EtatSignalement etat
+  - AmbianceSonore ambiance
+  - DateTime dateHeure
+  + isRecent(maxMinutes: int): boolean
+  + anonymiser(): void
+  + getPoidsConsensus(etudiantKarma: int): double
+}
+
+class SessionEtude {
+  - int id
+  - String salleNumero
+  - String createurId
+  - String matiere
+  - String description
+  - int placesDisponibles
+  - DateTime dateHeureDebut
+  - boolean actif
+  + rejoindre(etudiantId: String): boolean
+  + cloturer(): void
+}
+
+class Utilisateur {
+  - String identifiant
+  - Role role
+  - String emailEtablissement
+  - String motDePasseHash
+  - String nom
+  - int karmaScore
+  - DateTime dateCreation
+  + validerDomaineInstitutionnel(): boolean
+  + incrementerKarma(delta: int): void
+  + peutSignaler(): boolean
+  + estAdmin(): boolean
+}
+
+class MoteurRecommandation {
+  + calculerMeilleureSalle(now: DateTime): Salle
+  + calculerScore(salle: Salle, now: DateTime): int
+  + genererHeatmap(): HeatmapData
+}
+
+Salle "1" *-- "0..*" Creneau : possède >
+Salle "1" o-- "0..*" Signalement : reçoit >
+Salle "1" o-- "0..*" SessionEtude : héberge >
+Utilisateur "1" --> "0..*" Signalement : émet >
+Utilisateur "1" --> "0..*" SessionEtude : organise >
+
+Signalement ..> EtatSignalement
+Signalement ..> AmbianceSonore
+Salle ..> EtatOccupation
+Utilisateur ..> Role
+MoteurRecommandation ..> Salle : évalue
+
+note right of Utilisateur
+  <b>Campus Karma</b> (0-200 pts) :
+  Initialisé à 100 pts.
+  +5 pts : Création de session ou signalement corroboré.
+  -20 pts : Signalement contesté.
+end note
+
+note bottom of SessionEtude
+  <b>Study Beacon</b> :
+  Permet d'annoncer une session de révision
+  collaborative avec places restantes.
+end note
+
+@enduml

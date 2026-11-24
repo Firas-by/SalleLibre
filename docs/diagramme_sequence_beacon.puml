@@ -1,0 +1,41 @@
+@startuml SalleLibre_Sequence_Beacon
+autonumber
+actor "Étudiant A (Organisateur)" as EA
+actor "Étudiant B (Participant)" as EB
+participant "Client Web Réactif (HTML5/JS)" as UI
+participant "Contrôleur API Node.js" as API
+participant "SessionEtudeService" as Service
+database "Base SQLite" as DB
+
+== Lancement d'une Session d'Entraide (Study Beacon) ==
+EA -> UI: Ouvre Salle A01 & clique sur "Lancer session d'entraide"
+EA -> UI: Saisit "Génie Logiciel", 3 places restantes, ambiance Silencieuse
+UI -> API: POST /api/sessions-etude\n{salle: "A01", matiere: "Génie Logiciel", places: 3}\nHeader: Bearer Token
+activate API
+API -> Service: creerSessionEtude(params)
+activate Service
+Service -> DB: INSERT INTO sessions_etude (salle, createur, matiere, places, actif)
+DB --> Service: ID Session = 1
+Service -> DB: UPDATE utilisateurs SET karmaScore = karmaScore + 5 WHERE id = EA
+DB --> Service: Karma = 105 (+5 pts)
+Service --> API: Session activée
+deactivate Service
+API --> UI: 201 Created {sessionId: 1, karma: 105}
+deactivate API
+UI --> EA: Toast de confirmation + Badge Karma actualisé
+
+== Découverte et Rejoindre la Session ==
+EB -> UI: Consulte le tableau de bord & voit le badge "Session GL en A01"
+EB -> UI: Clique sur "Rejoindre la session"
+UI -> API: POST /api/sessions-etude/1/rejoindre\nHeader: Bearer Token EB
+activate API
+API -> Service: rejoindreSession(1, EB)
+activate Service
+Service -> DB: UPDATE sessions_etude SET placesDisponibles = placesDisponibles - 1 WHERE id = 1
+DB --> Service: Places restantes = 2
+Service --> API: Succès
+deactivate Service
+API --> UI: 200 OK {placesRestantes: 2}
+deactivate API
+UI --> EB: Confirmation : "Vous avez réservé votre place en A01 !"
+@enduml

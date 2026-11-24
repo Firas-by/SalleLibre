@@ -1,0 +1,25 @@
+# Multi-stage minimal production Dockerfile for SalleLibre
+FROM node:22-alpine AS runner
+
+WORKDIR /app
+
+# Dépendances de production
+COPY package*.json ./
+RUN npm ci --omit=dev
+
+# Code source
+COPY src/ ./src/
+COPY public/ ./public/
+COPY data/ ./data/
+
+# Variables d'environnement
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV INSTITUTIONAL_EMAIL_DOMAINS=univ.tn,institution.tn,ensi.rnu.tn
+
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1
+
+CMD ["node", "src/server.js"]

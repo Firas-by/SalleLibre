@@ -1,0 +1,1799 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SalleLibre - Showcase Interactif & Simulateur Campus</title>
+  <!-- Tailwind CSS via official allowlisted CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @keyframes pulse-slow {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.15); opacity: 0.75; }
+    }
+    @keyframes ping-subtle {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      70%, 100% { transform: scale(1.6); opacity: 0; }
+    }
+    .animate-pulse-slow {
+      animation: pulse-slow 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    .animate-ping-subtle {
+      animation: ping-subtle 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+    }
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-blue-600 selection:text-white">
+
+  <!-- Top Application Bar -->
+  <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-40 px-4 py-3 shadow-md">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      <!-- Logo & Branding -->
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-700 via-indigo-600 to-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-1.5">
+              <span>SalleLibre</span>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 font-medium">Gen-UI Showcase</span>
+            </h1>
+          </div>
+          <p id="app-tagline" class="text-xs text-slate-400">Système de repérage des salles libres & Simulateur d'affluence</p>
+        </div>
+      </div>
+
+      <!-- Live Campus Occupancy Counters -->
+      <div class="flex items-center gap-2 sm:gap-4 bg-slate-950/60 border border-slate-800 rounded-xl px-3 py-1.5 text-xs">
+        <div class="flex items-center gap-1.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-sm shadow-emerald-500/50"></span>
+          <span id="counter-libre-label" class="text-slate-400 font-medium">Libres:</span>
+          <span id="count-libre" class="font-bold text-emerald-400 text-sm tabular-nums">0</span>
+        </div>
+        <div class="w-px h-4 bg-slate-800"></div>
+        <div class="flex items-center gap-1.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-sm shadow-amber-500/50"></span>
+          <span id="counter-incertaine-label" class="text-slate-400 font-medium">Incertaines:</span>
+          <span id="count-incertaine" class="font-bold text-amber-400 text-sm tabular-nums">0</span>
+        </div>
+        <div class="w-px h-4 bg-slate-800"></div>
+        <div class="flex items-center gap-1.5">
+          <span class="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-sm shadow-rose-500/50"></span>
+          <span id="counter-occupee-label" class="text-slate-400 font-medium">Occupées:</span>
+          <span id="count-occupee" class="font-bold text-rose-400 text-sm tabular-nums">0</span>
+        </div>
+      </div>
+
+      <!-- Controls: User Role & Language Toggle -->
+      <div class="flex items-center gap-3">
+        <!-- Identity Selector -->
+        <div class="flex items-center bg-slate-800/80 border border-slate-700/80 rounded-lg p-1 text-xs">
+          <svg class="w-4 h-4 text-slate-400 ml-1.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+          <select id="user-role-select" onchange="onUserChange(this.value)" class="bg-transparent text-slate-200 text-xs font-medium focus:outline-none pr-1 cursor-pointer">
+            <option value="student1" class="bg-slate-900 text-slate-200">🎓 Sarra (Étudiante)</option>
+            <option value="student2" class="bg-slate-900 text-slate-200">🎓 Mohamed (Étudiant)</option>
+            <option value="admin" class="bg-slate-900 text-slate-200">🔑 Mme Nihel (Scolarité)</option>
+            <option value="guest" class="bg-slate-900 text-slate-200">👤 Visiteur Anonyme</option>
+          </select>
+        </div>
+
+        <!-- Bilingual FR / EN Toggle -->
+        <button id="lang-toggle-btn" onclick="toggleLanguage()" class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-semibold text-slate-200 transition-colors">
+          <span id="lang-flag">🇬🇧</span>
+          <span id="lang-text">EN</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Layout -->
+  <main class="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+
+    <!-- MASTER TIME-TRAVEL CONTROLLER -->
+    <section class="bg-gradient-to-r from-slate-900 via-slate-900 to-slate-850 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl relative overflow-hidden">
+      <!-- Glow ambient accent -->
+      <div class="absolute -top-24 -right-24 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+      <div class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+        <!-- Time Travel Header & Live Clock Readout -->
+        <div class="flex items-center gap-4">
+          <div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
+            <svg class="w-6 h-6 text-blue-400 animate-spin" style="animation-duration: 20s;" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span id="tt-title" class="font-bold text-white text-base">Moteur Temporel & Chronologie</span>
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                08:00 — 20:00
+              </span>
+            </div>
+            <p id="tt-desc" class="text-xs text-slate-400">Glissez le curseur pour observer les créneaux et l'incertitude crowdsourcée évoluer en temps réel.</p>
+          </div>
+        </div>
+
+        <!-- Controls: Day Selector, Clock Digital Display, Play/Pause -->
+        <div class="flex flex-wrap items-center gap-3">
+          <!-- Day of week selector -->
+          <div class="flex items-center bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 text-xs">
+            <span id="tt-day-label" class="text-slate-400 mr-2 font-medium">Jour:</span>
+            <select id="sim-day-select" onchange="onSimDayChange(this.value)" class="bg-transparent text-white font-semibold focus:outline-none cursor-pointer">
+              <option value="1" class="bg-slate-900">Lundi</option>
+              <option value="2" class="bg-slate-900">Mardi</option>
+              <option value="3" class="bg-slate-900">Mercredi</option>
+              <option value="4" class="bg-slate-900">Jeudi</option>
+              <option value="5" class="bg-slate-900">Vendredi</option>
+              <option value="6" class="bg-slate-900">Samedi</option>
+            </select>
+          </div>
+
+          <!-- Digital Simulated Clock -->
+          <div class="bg-slate-950 border border-blue-500/30 rounded-xl px-4 py-1.5 flex items-center gap-2 shadow-inner">
+            <span class="relative flex h-2 w-2">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+            </span>
+            <span id="sim-clock-display" class="font-mono text-xl font-bold tracking-wider text-blue-400 tabular-nums">09:15</span>
+          </div>
+
+          <!-- Play/Pause Button -->
+          <button id="sim-play-btn" onclick="togglePlaySimulation()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs shadow-lg shadow-blue-600/30 transition-all">
+            <svg id="sim-play-icon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span id="sim-play-label">Lecture</span>
+          </button>
+
+          <!-- Step Forward +30m (Uncertainty Test Button) -->
+          <button onclick="advanceTime(30)" title="Faire vieillir les signalements de 30 min pour déclencher l'état INCERTAINE" class="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-medium text-xs transition-all">
+            <span>+30m</span>
+            <span id="btn-uncertainty-sublabel" class="hidden sm:inline text-[11px] opacity-80">(Règle B2.3)</span>
+          </button>
+
+          <!-- Reset Button -->
+          <button onclick="setTimeMinutes(9 * 60 + 15)" title="Réinitialiser à 09:15" class="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Time Slider Input and Markers -->
+      <div class="mt-4 pt-3 border-t border-slate-800/80">
+        <div class="relative flex items-center">
+          <input 
+            id="time-slider" 
+            type="range" 
+            min="480" 
+            max="1200" 
+            step="5" 
+            value="555" 
+            oninput="onSliderInput(this.value)"
+            class="w-full h-2.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-blue-500 focus:outline-none"
+          />
+        </div>
+
+        <!-- Time Ticks & Quick Jump Buttons -->
+        <div class="flex justify-between items-center text-[11px] text-slate-400 font-mono mt-2 px-1">
+          <button onclick="setTimeMinutes(8*60)" class="hover:text-blue-400 transition-colors">08:00</button>
+          <button onclick="setTimeMinutes(8*60+30)" class="hover:text-blue-400 transition-colors">08:30 <span class="hidden md:inline text-slate-500">(Début cours)</span></button>
+          <button onclick="setTimeMinutes(10*60)" class="hover:text-blue-400 transition-colors">10:00 <span class="hidden md:inline text-slate-500">(Pause)</span></button>
+          <button onclick="setTimeMinutes(12*60)" class="hover:text-blue-400 transition-colors font-bold text-slate-300">12:00 <span class="hidden md:inline text-slate-500">(Midi)</span></button>
+          <button onclick="setTimeMinutes(14*60)" class="hover:text-blue-400 transition-colors">14:00 <span class="hidden md:inline text-slate-500">(Reprise)</span></button>
+          <button onclick="setTimeMinutes(16*60+30)" class="hover:text-blue-400 transition-colors">16:30</button>
+          <button onclick="setTimeMinutes(18*60)" class="hover:text-blue-400 transition-colors">18:00</button>
+          <button onclick="setTimeMinutes(20*60)" class="hover:text-blue-400 transition-colors">20:00</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- NAVIGATION TABS -->
+    <div class="flex items-center gap-2 border-b border-slate-800 pb-2">
+      <button id="tab-btn-map" onclick="switchMainTab('map')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-blue-600 text-white shadow-md shadow-blue-600/20 transition-all">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+        </svg>
+        <span id="tab-label-map">Plan Interactif du Campus</span>
+      </button>
+
+      <button id="tab-btn-csv" onclick="switchMainTab('csv')" class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 transition-all">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        <span id="tab-label-csv">Inspecteur & Validateur CSV (Scolarité)</span>
+        <span class="px-1.5 py-0.5 text-[10px] rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">Ligne 4 Test</span>
+      </button>
+    </div>
+
+    <!-- TAB 1: CAMPUS MAP & CROWDSOURCING SIMULATOR -->
+    <div id="section-map" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- LEFT: SVG Interactive Campus Map (7 cols) -->
+      <div class="lg:col-span-7 space-y-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+          <!-- Building Filter Tabs & Map Legend -->
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <div class="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs font-medium">
+              <button onclick="setBuildingFilter('ALL')" id="bfilter-ALL" class="px-3 py-1 rounded-lg bg-blue-600 text-white transition-colors">Tous (A, B, C)</button>
+              <button onclick="setBuildingFilter('A')" id="bfilter-A" class="px-3 py-1 rounded-lg text-slate-400 hover:text-white transition-colors">Bâtiment A</button>
+              <button onclick="setBuildingFilter('B')" id="bfilter-B" class="px-3 py-1 rounded-lg text-slate-400 hover:text-white transition-colors">Bâtiment B</button>
+              <button onclick="setBuildingFilter('C')" id="bfilter-C" class="px-3 py-1 rounded-lg text-slate-400 hover:text-white transition-colors">Bâtiment C</button>
+            </div>
+
+            <!-- Legend Pills -->
+            <div class="flex items-center gap-2 text-[11px]">
+              <span class="inline-flex items-center gap-1 text-emerald-400 font-medium">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping-subtle"></span> Libre
+              </span>
+              <span class="inline-flex items-center gap-1 text-amber-400 font-medium">
+                <span class="w-2 h-2 rounded-full bg-amber-500"></span> Incertaine
+              </span>
+              <span class="inline-flex items-center gap-1 text-rose-400 font-medium">
+                <span class="w-2 h-2 rounded-full bg-rose-500"></span> Occupée
+              </span>
+            </div>
+          </div>
+
+          <!-- SVG Canvas Container -->
+          <div class="relative bg-slate-950 rounded-xl border border-slate-800/80 overflow-hidden shadow-inner flex items-center justify-center p-2">
+            <!-- Architectural Vector Map -->
+            <svg id="campus-svg" viewBox="0 0 850 560" class="w-full h-auto select-none" style="max-height: 520px;">
+              <defs>
+                <!-- Grid background pattern -->
+                <pattern id="campusGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.75" stroke-dasharray="2 2" />
+                </pattern>
+                <!-- Building Gradients -->
+                <linearGradient id="gradBldA" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#1e293b" />
+                  <stop offset="100%" stop-color="#0f172a" />
+                </linearGradient>
+                <linearGradient id="gradBldB" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#1e293b" />
+                  <stop offset="100%" stop-color="#0f172a" />
+                </linearGradient>
+                <linearGradient id="gradBldC" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#1e293b" />
+                  <stop offset="100%" stop-color="#0f172a" />
+                </linearGradient>
+                <filter id="glowGreen" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3" result="glow" />
+                  <feComposite in="SourceGraphic" in2="glow" operator="over" />
+                </filter>
+                <filter id="glowAmber" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3" result="glow" />
+                  <feComposite in="SourceGraphic" in2="glow" operator="over" />
+                </filter>
+                <filter id="glowRed" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3" result="glow" />
+                  <feComposite in="SourceGraphic" in2="glow" operator="over" />
+                </filter>
+              </defs>
+
+              <!-- Blueprint Grid Background -->
+              <rect width="850" height="560" fill="#090d16" />
+              <rect width="850" height="560" fill="url(#campusGrid)" />
+
+              <!-- Campus Greenery & Pathway Accents -->
+              <path d="M 0 280 Q 200 290 380 270 T 850 280" fill="none" stroke="#1e3a8a" stroke-width="26" opacity="0.15" />
+              <path d="M 0 280 Q 200 290 380 270 T 850 280" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="8 6" />
+
+              <path d="M 280 0 Q 290 200 270 560" fill="none" stroke="#1e3a8a" stroke-width="20" opacity="0.12" />
+              <path d="M 570 0 Q 560 300 580 560" fill="none" stroke="#1e3a8a" stroke-width="20" opacity="0.12" />
+
+              <!-- Central Plaza Circle -->
+              <circle cx="425" cy="275" r="45" fill="#0f172a" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.6" />
+              <circle cx="425" cy="275" r="18" fill="#1e3a8a" opacity="0.4" />
+              <text x="425" y="278" font-size="10" fill="#93c5fd" font-weight="bold" text-anchor="middle" font-family="sans-serif">AGORA</text>
+
+              <!-- ========================================== -->
+              <!-- BUILDING A (Génie Informatique & Amphis) -->
+              <!-- ========================================== -->
+              <g id="svg-building-A" class="transition-opacity duration-300">
+                <!-- Outer Building Shell -->
+                <rect x="40" y="50" width="220" height="420" rx="14" fill="url(#gradBldA)" stroke="#3b82f6" stroke-width="2" opacity="0.95" />
+                <rect x="40" y="50" width="220" height="38" rx="14" fill="#1e3a8a" opacity="0.4" />
+                <text x="56" y="74" fill="#60a5fa" font-size="13" font-weight="bold" font-family="sans-serif">BÂTIMENT A</text>
+                <text x="175" y="74" fill="#94a3b8" font-size="10" font-family="sans-serif">Info / Amphis</text>
+
+                <!-- Corridor divider -->
+                <line x1="145" y1="95" x2="145" y2="455" stroke="#334155" stroke-width="1.5" stroke-dasharray="3 3" />
+
+                <!-- Room A01 (Ground Floor, 35 seats, plugs) -->
+                <g id="room-box-A01" onclick="selectRoom('A01')" class="cursor-pointer group">
+                  <rect x="55" y="100" width="80" height="100" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" class="transition-all duration-200 group-hover:stroke-blue-400 group-hover:fill-slate-800" />
+                  <text x="95" y="130" font-size="14" font-weight="bold" fill="#f8fafc" text-anchor="middle" font-family="sans-serif">A01</text>
+                  <text x="95" y="150" font-size="10" fill="#94a3b8" text-anchor="middle" font-family="sans-serif">35 pl. ⚡</text>
+                  <!-- Pulse indicator dot -->
+                  <circle id="dot-ping-A01" cx="120" cy="115" r="8" fill="#10b981" opacity="0.4" class="animate-ping-subtle" />
+                  <circle id="dot-solid-A01" cx="120" cy="115" r="4.5" fill="#10b981" filter="url(#glowGreen)" />
+                </g>
+
+                <!-- Room A02 (Ground Floor, 40 seats, plugs) -->
+                <g id="room-box-A02" onclick="selectRoom('A02')" class="cursor-pointer group">
+                  <rect x="55" y="215" width="80" height="105" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" class="transition-all duration-200 group-hover:stroke-blue-400 group-hover:fill-slate-800" />
+                  <text x="95" y="250" font-size="14" font-weight="bold" fill="#f8fafc" text-anchor="middle" font-family="sans-serif">A02</text>
+                  <text x="95" y="270" font-size="10" fill="#94a3b8" text-anchor="middle" font-family="sans-serif">40 pl. ⚡</text>
+                  <!-- Pulse indicator dot -->
+                  <circle id="dot-ping-A02" cx="120" cy="230" r="8" fill="#10b981" opacity="0.4" class="animate-ping-subtle" />
+                  <circle id="dot-solid-A02" cx="120" cy="230" r="4.5" fill="#10b981" filter="url(#glowGreen)" />
+                </g>
+
+                <!-- Room A105 (Floor 1, 60 seats, no plugs) -->
+                <g id="room-box-A105" onclick="selectRoom('A105')" class="cursor-pointer group">
+                  <rect x="55" y="335" width="185" height="115" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" class="transition-all duration-200 group-hover:stroke-blue-400 group-hover:fill-slate-800" />
+                  <text x="145" y="375" font-size="15" font-weight="bold" fill="#f8fafc" text-anchor="middle" font-family="sans-serif">A105 (Étage 1)</text>
+                  <text x="145" y="398" font-size="11" fill="#94a3b8" text-anchor="middle" font-family="sans-serif">Capacité 60 pl. • Sans prises</text>
+                  <!-- Pulse indicator dot -->
+                  <circle id="dot-ping-A105" cx="220" cy="350" r="8" fill="#10b981" opacity="0.4" class="animate-ping-subtle" />
+                  <circle id="dot-solid-A105" cx="220" cy="350" r="4.5" fill="#10b981" filter="url(#glowGreen)" />
+                </g>
+              </g>
+
+              <!-- ========================================== -->
+              <!-- BUILDING B (Laboratoires & Ateliers) -->
+              <!-- ========================================== -->
+              <g id="svg-building-B" class="transition-opacity duration-300">
+                <!-- Outer Building Shell -->
+                <rect x="315" y="50" width="220" height="420" rx="14" fill="url(#gradBldB)" stroke="#8b5cf6" stroke-width="2" opacity="0.95" />
+                <rect x="315" y="50" width="220" height="38" rx="14" fill="#4c1d95" opacity="0.4" />
+                <text x="330" y="74" fill="#c084fc" font-size="13" font-weight="bold" font-family="sans-serif">BÂTIMENT B</text>
+                <text x="445" y="74" fill="#94a3b8" font-size="10" font-family="sans-serif">Laboratoires / TP</text>
+
+                <!-- Corridor line -->
+                <line x1="330" y1="210" x2="520" y2="210" stroke="#334155" stroke-width="1.5" stroke-dasharray="3 3" />
+
+                <!-- Room B101 (Floor 1, 25 seats, plugs) -->
+                <g id="room-box-B101" onclick="selectRoom('B101')" class="cursor-pointer group">
+                  <rect x="330" y="100" width="90" height="95" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" class="transition-all duration-200 group-hover:stroke-purple-400 group-hover:fill-slate-800" />
+                  <text x="375" y="135" font-size="14" font-weight="bold" fill="#f8fafc" text-anchor="middle" font-family="sans-serif">B101</text>
+                  <text x="375" y="155" font-size="10" fill="#94a3b8" text-anchor="middle" font-family="sans-serif">25 pl. ⚡</text>
+                  <!-- Pulse indicator dot -->
+                  <circle id="dot-ping-B101" cx="405" cy="115" r="8" fill="#10b981" opacity="0.4" class="animate-ping-subtle" />
+                  <circle id="dot-solid-B101" cx="405" cy="115" r="4.5" fill="#10b981" filter="url(#glowGreen)" />
+                </g>
+
+                <!-- Room B102 (Floor 1, 50 seats, plugs) -->
+                <g id="room-box-B102" onclick="selectRoom('B102')" class="cursor-pointer group">
+                  <rect x="430" y="100" width="90" height="95" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" class="transition-all duration-200 group-hover:stroke-purple-400 group-hover:fill-slate-800" />
+                  <text x="475" y="135" font-size="14" font-weight="bold" fill="#f8fafc" text-anchor="middle" font-family="sans-serif">B102</text>
+                  <text x="475" y="155" font-size="10" fill="#94a3b8" text-anchor="middle" font-family="sans-serif">50 pl. ⚡</text>
+                  <!-- Pulse indicator dot -->
+                  <circle id="dot-ping-B102" cx="505" cy="115" r="8" fill="#10b981" opacity="0.4" class="animate-ping-subtle" />
+                  <circle id="dot-solid-B102" cx="505" cy="115" r="4.5" fill="#10b981" filter="url(#glowGreen)" />
+                </g>
+
+                <!-- Room B204 (Floor 2, 30 seats, no plugs) -->
+                <g id="room-box-B204" onclick="selectRoom('B204')" class="cursor-pointer group">
+                  <rect x="330" y="235" width="190" height="215" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" class="transition-all duration-200 group-hover:stroke-purple-400 group-hover:fill-slate-800" />
+                  <text x="425" y="325" font-size="16" font-weight="bold" fill="#f8fafc" text-anchor="middle" font-family="sans-serif">B204 (Étage 2)</text>
+                  <text x="425" y="350" font-size="12" fill="#94a3b8" text-anchor="middle" font-family="sans-serif">Labo Spécialisé • 30 places</text>
+                  <text x="425" y="372" font-size="10" fill="#64748b" text-anchor="middle" font-family="sans-serif">Sans prises individuelles</text>
+                  <!-- Pulse indicator dot -->
+                  <circle id="dot-ping-B204" cx="500" cy="255" r="8" fill="#10b981" opacity="0.4" class="animate-ping-subtle" />
+                  <circle id="dot-solid-B204" cx="500" cy="255" r="4.5" fill="#10b981" filter="url(#glowGreen)" />
+                </g>
+              </g>
+
+              <!-- ========================================== -->
+              <!-- BUILDING C (Centre de Calcul & Grand Amphi) -->
+              <!-- ========================================== -->
+              <g id="svg-building-C" class="transition-opacity duration-300">
+                <!-- Outer Building Shell -->
+                <rect x="590" y="50" width="220" height="420" rx="14" fill="url(#gradBldC)" stroke="#06b6d4" stroke-width="2" opacity="0.95" />
+                <rect x="590" y="50" width="220" height="38" rx="14" fill="#0e7490" opacity="0.4" />
+                <text x="605" y="74" fill="#67e8f9" font-size="13" font-weight="bold" font-family="sans-serif">BÂTIMENT C</text>
+                <text x="715" y="74" fill="#94a3b8" font-size="10" font-family="sans-serif">Centre Calcul</text>
+
+                <!-- Room C101 (Amphithéâtre, 80 seats, plugs) -->
+                <g id="room-box-C101" onclick="selectRoom('C101')" class="cursor-pointer group">
+                  <path d="M 605 105 L 795 105 L 795 240 Q 700 270 605 240 Z" fill="#1e293b" stroke="#475569" stroke-width="1.5" class="transition-all duration-200 group-hover:stroke-cyan-400 group-hover:fill-slate-800" />
+                  <text x="700" y="155" font-size="16" font-weight="bold" fill="#f8fafc" text-anchor="middle" font-family="sans-serif">C101 (Grand Amphi)</text>
+                  <text x="700" y="180" font-size="12" fill="#94a3b8" text-anchor="middle" font-family="sans-serif">80 places • Prises ⚡</text>
+                  <text x="700" y="200" font-size="10" fill="#64748b" text-anchor="middle" font-family="sans-serif">Projection HD & Climatisation</text>
+                  <!-- Pulse indicator dot -->
+                  <circle id="dot-ping-C101" cx="775" cy="125" r="8" fill="#10b981" opacity="0.4" class="animate-ping-subtle" />
+                  <circle id="dot-solid-C101" cx="775" cy="125" r="4.5" fill="#10b981" filter="url(#glowGreen)" />
+                </g>
+
+                <!-- Room C203 (Floor 2, 45 seats, plugs) -->
+                <g id="room-box-C203" onclick="selectRoom('C203')" class="cursor-pointer group">
+                  <rect x="605" y="280" width="90" height="170" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" class="transition-all duration-200 group-hover:stroke-cyan-400 group-hover:fill-slate-800" />
+                  <text x="650" y="335" font-size="14" font-weight="bold" fill="#f8fafc" text-anchor="middle" font-family="sans-serif">C203</text>
+                  <text x="650" y="358" font-size="10" fill="#94a3b8" text-anchor="middle" font-family="sans-serif">45 pl. ⚡</text>
+                  <text x="650" y="378" font-size="9" fill="#64748b" text-anchor="middle" font-family="sans-serif">Étage 2</text>
+                  <!-- Pulse indicator dot -->
+                  <circle id="dot-ping-C203" cx="680" cy="295" r="8" fill="#10b981" opacity="0.4" class="animate-ping-subtle" />
+                  <circle id="dot-solid-C203" cx="680" cy="295" r="4.5" fill="#10b981" filter="url(#glowGreen)" />
+                </g>
+
+                <!-- Room C205 (Floor 2, 20 seats, no plugs) -->
+                <g id="room-box-C205" onclick="selectRoom('C205')" class="cursor-pointer group">
+                  <rect x="710" y="280" width="85" height="170" rx="8" fill="#1e293b" stroke="#475569" stroke-width="1.5" class="transition-all duration-200 group-hover:stroke-cyan-400 group-hover:fill-slate-800" />
+                  <text x="752" y="335" font-size="14" font-weight="bold" fill="#f8fafc" text-anchor="middle" font-family="sans-serif">C205</text>
+                  <text x="752" y="358" font-size="10" fill="#94a3b8" text-anchor="middle" font-family="sans-serif">20 pl.</text>
+                  <text x="752" y="378" font-size="9" fill="#64748b" text-anchor="middle" font-family="sans-serif">Salle Réunion</text>
+                  <!-- Pulse indicator dot -->
+                  <circle id="dot-ping-C205" cx="778" cy="295" r="8" fill="#10b981" opacity="0.4" class="animate-ping-subtle" />
+                  <circle id="dot-solid-C205" cx="778" cy="295" r="4.5" fill="#10b981" filter="url(#glowGreen)" />
+                </g>
+              </g>
+
+              <!-- Map Footer / Orientation compass -->
+              <g transform="translate(425, 520)">
+                <text x="0" y="0" font-size="10" fill="#64748b" text-anchor="middle" font-family="sans-serif">▲ NORD CAMPUS • ENTRÉE PRINCIPALE SUD ▼</text>
+              </g>
+            </svg>
+
+            <!-- Map overlay instruction -->
+            <div class="absolute bottom-3 left-4 bg-slate-900/80 backdrop-blur px-3 py-1 rounded-lg border border-slate-700/60 text-[11px] text-slate-300 pointer-events-none flex items-center gap-1.5">
+              <span>💡</span>
+              <span id="map-hint">Cliquez sur une salle pour inspecter ou soumettre un signalement</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Room Filter Pills -->
+        <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div class="flex items-center gap-2">
+            <span id="filter-quick-label" class="text-slate-400 font-medium">Accès rapide :</span>
+            <div id="quick-room-pills" class="flex flex-wrap gap-1.5">
+              <!-- Dynamically populated room buttons -->
+            </div>
+          </div>
+          <div class="flex items-center gap-3 text-slate-400">
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" id="filter-plugs-only" onchange="togglePlugsFilter(this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-500 focus:ring-0">
+              <span id="label-plugs-only">Prises ⚡</span>
+            </label>
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" id="filter-free-only" onchange="toggleFreeOnlyFilter(this.checked)" class="rounded bg-slate-800 border-slate-700 text-blue-500 focus:ring-0">
+              <span id="label-free-only">Libres seules</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Interactive Room Inspector & Crowdsourcing Simulator (5 cols) -->
+      <div class="lg:col-span-5 space-y-4">
+
+        <!-- Selected Room Detail Card -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl relative">
+          <!-- Room Header & Badge -->
+          <div class="flex items-start justify-between gap-3 pb-3 border-b border-slate-800">
+            <div>
+              <div class="flex items-center gap-2">
+                <span id="detail-room-number" class="text-2xl font-black text-white tracking-tight">A01</span>
+                <span id="detail-building-pill" class="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 font-semibold border border-slate-700">Bâtiment A</span>
+              </div>
+              <p id="detail-room-specs" class="text-xs text-slate-400 mt-0.5">Capacité 35 places • Avec prises électriques ⚡</p>
+            </div>
+
+            <!-- Dynamic Status Badge -->
+            <div id="detail-status-badge" class="px-3 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-sm bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              <span id="detail-status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span id="detail-status-text">LIBRE</span>
+            </div>
+          </div>
+
+          <!-- Schedule Status at Current Sim Time -->
+          <div class="mt-4 space-y-3">
+            <div class="bg-slate-950/70 rounded-xl p-3 border border-slate-800/80">
+              <div class="flex items-center justify-between text-xs text-slate-400 mb-1">
+                <span id="detail-sched-status-label" class="font-medium">Emploi du temps officiel :</span>
+                <span id="detail-sched-badge" class="font-semibold text-emerald-400">Aucun cours en cours</span>
+              </div>
+              <div id="detail-current-course-box" class="text-xs text-slate-200 font-medium">
+                <!-- Active or next course details -->
+              </div>
+            </div>
+
+            <!-- Crowdsourcing Information & Freshness Gauge (Règle B2.3) -->
+            <div class="bg-slate-950/70 rounded-xl p-3 border border-slate-800/80">
+              <div class="flex items-center justify-between text-xs text-slate-400 mb-1.5">
+                <span id="detail-crowd-label" class="font-medium">Dernier signalement étudiant :</span>
+                <span id="detail-crowd-time" class="font-mono text-slate-300">Il y a 5 min</span>
+              </div>
+
+              <!-- Freshness Bar (0 to 30 mins) -->
+              <div class="w-full bg-slate-800 rounded-full h-2 overflow-hidden mb-1.5">
+                <div id="freshness-bar" class="bg-emerald-500 h-2 rounded-full transition-all duration-500" style="width: 83%;"></div>
+              </div>
+
+              <div class="flex justify-between items-center text-[10px] text-slate-400">
+                <span id="detail-crowd-author">Par: Sarra Ben Ali</span>
+                <span id="detail-crowd-rule" class="text-amber-400/90 font-medium">Bascule en INCERTAINE après 30m</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Crowdsourcing Action Simulator (Règle B2.4 Cooldown & Anti-Spam) -->
+          <div class="mt-5 pt-4 border-t border-slate-800">
+            <div class="flex items-center justify-between mb-3">
+              <h4 id="cs-box-title" class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
+                </svg>
+                <span>Signaler la disponibilité</span>
+              </h4>
+              <!-- Anti-Spam Cooldown Indicator Badge -->
+              <div id="cooldown-badge" class="hidden items-center gap-1 px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-semibold">
+                <span>⏳ Cooldown :</span>
+                <span id="cooldown-timer-text" class="font-mono tabular-nums">09:40</span>
+              </div>
+            </div>
+
+            <!-- Submit Buttons -->
+            <div class="grid grid-cols-2 gap-2.5">
+              <button 
+                id="btn-report-free" 
+                onclick="submitSignalement('LIBRE')" 
+                class="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-emerald-600/90 hover:bg-emerald-500 active:scale-95 text-white font-semibold text-xs shadow-lg shadow-emerald-900/30 transition-all disabled:opacity-40 disabled:pointer-events-none"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span id="btn-report-free-text">Signaler LIBRE</span>
+              </button>
+
+              <button 
+                id="btn-report-occupied" 
+                onclick="submitSignalement('OCCUPEE')" 
+                class="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-rose-600/90 hover:bg-rose-500 active:scale-95 text-white font-semibold text-xs shadow-lg shadow-rose-900/30 transition-all disabled:opacity-40 disabled:pointer-events-none"
+              >
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <span id="btn-report-occ-text">Signaler OCCUPÉE</span>
+              </button>
+            </div>
+
+            <!-- Notification Feedback Banner -->
+            <div id="report-feedback-banner" class="hidden mt-3 p-2.5 rounded-xl text-xs transition-all flex items-start gap-2">
+              <span id="feedback-icon" class="text-sm">ℹ️</span>
+              <p id="feedback-text" class="text-slate-200 text-[11px] leading-tight"></p>
+            </div>
+
+            <!-- Cooldown explanation footnote -->
+            <p id="cooldown-footnote" class="text-[10px] text-slate-500 mt-2 text-center">
+              Règle B2.4 : Quota strict d'un signalement par salle toutes les 10 minutes par étudiant pour éviter tout spam.
+            </p>
+          </div>
+        </div>
+
+        <!-- Full Day Schedule Timeline for Selected Room -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
+          <div class="flex items-center justify-between mb-2">
+            <h4 id="timeline-title" class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+              <span>📅 Emploi du Temps du Jour :</span>
+              <span id="timeline-room-name" class="text-blue-400 font-mono font-bold">A01</span>
+            </h4>
+            <span id="timeline-day-pill" class="text-[11px] text-slate-400 font-medium">Lundi</span>
+          </div>
+
+          <div id="room-timeline-slots" class="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+            <!-- Dynamically populated timeline slots -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: TIMETABLE CSV INSPECTOR & VALIDATOR -->
+    <div id="section-csv" class="hidden space-y-5">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+        <!-- CSV Header & Instructions -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-4 border-b border-slate-800">
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 id="csv-tool-title" class="text-base font-bold text-white">Inspecteur & Parseur d'Emploi du Temps CSV</h2>
+              <span class="text-xs px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/30 font-mono font-semibold">RFC-4180 Linter</span>
+            </div>
+            <p id="csv-tool-desc" class="text-xs text-slate-400 mt-1">
+              Validez la conformité syntaxique et chronologique des imports administratifs selon les spécifications B3.1.
+            </p>
+          </div>
+
+          <!-- Sample CSV Loaders -->
+          <div class="flex flex-wrap items-center gap-2">
+            <button onclick="loadSampleCsv('valid')" class="px-3 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 text-xs font-semibold flex items-center gap-1.5 transition-all">
+              <span>✅</span>
+              <span id="btn-load-valid-csv">Charger CSV Conforme (10 créneaux)</span>
+            </button>
+            <button onclick="loadSampleCsv('invalid')" class="px-3 py-1.5 rounded-xl bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/40 text-rose-300 text-xs font-semibold flex items-center gap-1.5 transition-all">
+              <span>⚠️</span>
+              <span id="btn-load-invalid-csv">Charger CSV Invalide (Erreur Ligne 4)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- CSV Text Editor -->
+        <div>
+          <div class="flex items-center justify-between text-xs text-slate-400 mb-1.5">
+            <label for="csv-textarea" id="csv-editor-label" class="font-medium flex items-center gap-1.5">
+              <span>Contenu CSV (séparateur virgule) :</span>
+              <span class="text-[10px] text-slate-500">Colonnes obligatoires : salle, jour, heureDebut, heureFin, matiere</span>
+            </label>
+            <span id="csv-line-count" class="font-mono text-slate-400">11 lignes</span>
+          </div>
+
+          <textarea 
+            id="csv-textarea" 
+            rows="7" 
+            oninput="validateCsvLive()" 
+            class="w-full bg-slate-950 text-slate-200 font-mono text-xs rounded-xl p-3 border border-slate-700/80 focus:border-blue-500 focus:outline-none transition-colors"
+            placeholder="salle,jour,heureDebut,heureFin,matiere..."
+          ></textarea>
+        </div>
+
+        <!-- Action Bar: Validate & Import -->
+        <div class="flex flex-wrap items-center justify-between gap-3 pt-2">
+          <div class="flex items-center gap-2">
+            <button onclick="validateCsvLive()" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs shadow-md shadow-blue-600/30 transition-all flex items-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+              <span id="btn-run-validation">Analyser & Valider</span>
+            </button>
+
+            <button id="btn-import-sim" onclick="importCsvIntoSimulation()" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-md shadow-indigo-600/30 transition-all flex items-center gap-1.5 disabled:opacity-40 disabled:pointer-events-none">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+              </svg>
+              <span id="btn-import-sim-text">Importer dans la Simulation</span>
+            </button>
+          </div>
+
+          <!-- Overall CSV Status Indicator -->
+          <div id="csv-overall-status" class="flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+            <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+            <span>En attente d'analyse...</span>
+          </div>
+        </div>
+
+        <!-- Line-by-Line Inspection Results Table -->
+        <div class="mt-4 pt-3 border-t border-slate-800 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 id="csv-table-title" class="text-xs font-bold uppercase tracking-wider text-slate-300">
+              Rapport d'audit ligne par ligne
+            </h3>
+            <span id="csv-errors-badge" class="text-[11px] px-2 py-0.5 rounded-md font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              0 Erreur détectée
+            </span>
+          </div>
+
+          <div class="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950">
+            <table class="w-full text-left text-xs font-mono">
+              <thead class="bg-slate-900/90 text-slate-400 border-b border-slate-800 text-[11px]">
+                <tr>
+                  <th class="py-2.5 px-3 w-16 text-center">Ligne</th>
+                  <th class="py-2.5 px-3 w-24">Salle</th>
+                  <th class="py-2.5 px-3 w-28">Jour</th>
+                  <th class="py-2.5 px-3 w-28">Horaires</th>
+                  <th class="py-2.5 px-3">Matière</th>
+                  <th class="py-2.5 px-3 w-32">Statut</th>
+                  <th class="py-2.5 px-3">Diagnostic / Règle</th>
+                </tr>
+              </thead>
+              <tbody id="csv-inspection-rows" class="divide-y divide-slate-800/60 text-slate-300">
+                <!-- Dynamically populated linter rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- CSV Explanation Callout Card -->
+        <div id="csv-line4-explainer" class="bg-rose-950/30 border border-rose-500/40 rounded-xl p-4 text-xs space-y-2 hidden">
+          <div class="flex items-center gap-2 text-rose-300 font-bold">
+            <svg class="w-5 h-5 text-rose-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span id="explainer-title">Focus Erreur Ligne 4 : Incohérence Chronologique (HeureFin &lt; HeureDebut)</span>
+          </div>
+          <p id="explainer-p1" class="text-rose-200/90 leading-relaxed">
+            Le fichier CSV de test contient intentionnellement à la <strong>Ligne 4</strong> l'entrée : <code class="bg-rose-900/40 px-1.5 py-0.5 rounded text-rose-300 font-mono">B101,Lundi,14:00,12:00,Conception Erronée</code>.
+          </p>
+          <p id="explainer-p2" class="text-slate-300 leading-relaxed">
+            Conformément à la règle de validation stricte du backend (<code class="font-mono text-blue-400">csvParserService.js:121</code>), toute tentative d'import contenant une heure de fin antérieure à l'heure de début est <strong>rejetée de façon atomique (Rollback SQLite)</strong> avec code HTTP 400 pour empêcher toute corruption d'affichage pour les étudiants.
+          </p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- JAVASCRIPT SIMULATION LOGIC -->
+  <script>
+    /* =======================================================================
+       1. DATA STRUCTURES & CAMPUS CATALOG
+       ======================================================================= */
+    const CAMPUS_ROOMS = [
+      { numero: 'A01', batiment: 'A', capacite: 35, prises: true, etage: 0, type: 'Salle de cours' },
+      { numero: 'A02', batiment: 'A', capacite: 40, prises: true, etage: 0, type: 'Salle de cours' },
+      { numero: 'A105', batiment: 'A', capacite: 60, prises: false, etage: 1, type: 'Grand Amphi A' },
+      { numero: 'B101', batiment: 'B', capacite: 25, prises: true, etage: 1, type: 'Labo TP Info' },
+      { numero: 'B102', batiment: 'B', capacite: 50, prises: true, etage: 1, type: 'Salle TD' },
+      { numero: 'B204', batiment: 'B', capacite: 30, prises: false, etage: 2, type: 'Labo Réseaux' },
+      { numero: 'C101', batiment: 'C', capacite: 80, prises: true, etage: 1, type: 'Grand Amphithéâtre C' },
+      { numero: 'C203', batiment: 'C', capacite: 45, prises: true, etage: 2, type: 'Salle Multimédia' },
+      { numero: 'C205', batiment: 'C', capacite: 20, prises: false, etage: 2, type: 'Salle de Réunion' }
+    ];
+
+    // Seed Timetable Courses (Day 1=Lundi .. Day 6=Samedi)
+    let SCHEDULE_COURSES = [
+      // Lundi (1)
+      { salle: 'A01', jour: 1, debut: '08:30', fin: '10:00', matiere: 'Génie Logiciel Avancé' },
+      { salle: 'A01', jour: 1, debut: '14:00', fin: '16:30', matiere: 'Atelier Génie Logiciel & Web' },
+      { salle: 'A02', jour: 1, debut: '10:15', fin: '11:45', matiere: 'Algorithmique et Graphes' },
+      { salle: 'B101', jour: 1, debut: '08:30', fin: '11:45', matiere: 'Atelier Programmation Web' },
+      { salle: 'B102', jour: 1, debut: '14:00', fin: '17:15', matiere: 'Réseaux & Systèmes Distribués' },
+      { salle: 'C101', jour: 1, debut: '10:15', fin: '13:15', matiere: 'Architecture des Ordinateurs' },
+
+      // Mardi (2)
+      { salle: 'A01', jour: 2, debut: '10:15', fin: '11:45', matiere: 'Probabilités & Statistiques' },
+      { salle: 'B102', jour: 2, debut: '08:30', fin: '10:00', matiere: 'Bases de Données Relationnelles' },
+      { salle: 'C101', jour: 2, debut: '14:00', fin: '17:15', matiere: 'Architecture Cloud et Microservices' },
+      { salle: 'C203', jour: 2, debut: '14:00', fin: '17:00', matiere: 'Compilation' },
+
+      // Mercredi (3)
+      { salle: 'A02', jour: 3, debut: '08:30', fin: '11:45', matiere: 'UML & Analyse Objet' },
+      { salle: 'C101', jour: 3, debut: '14:00', fin: '15:30', matiere: 'Sécurité Informatique' },
+      { salle: 'C203', jour: 3, debut: '08:30', fin: '11:45', matiere: 'Sécurité Réseaux' },
+
+      // Jeudi (4)
+      { salle: 'A01', jour: 4, debut: '08:30', fin: '10:00', matiere: 'Intelligence Artificielle' },
+      { salle: 'A01', jour: 4, debut: '10:15', fin: '11:45', matiere: 'Deep Learning & Vision' },
+      { salle: 'B101', jour: 4, debut: '10:15', fin: '11:45', matiere: 'Droit Informatique' },
+      { salle: 'C205', jour: 4, debut: '14:00', fin: '15:30', matiere: 'Anglais Technique' },
+
+      // Vendredi (5)
+      { salle: 'A02', jour: 5, debut: '14:00', fin: '17:15', matiere: 'Projet Fédérateur' },
+      { salle: 'B101', jour: 5, debut: '14:00', fin: '16:00', matiere: 'Management Agile' },
+      { salle: 'B102', jour: 5, debut: '10:15', fin: '11:45', matiere: 'Management de Projet' },
+
+      // Samedi (6)
+      { salle: 'C101', jour: 6, debut: '08:30', fin: '11:45', matiere: 'Devoirs Surveillés' }
+    ];
+
+    // Initial Crowdsourced Reports:
+    // Simulated minutes relative to current time
+    let CROWD_REPORTS = [
+      // A01 was reported LIBRE 8 simulated minutes ago
+      { salleNumero: 'A01', userName: 'Sarra Ben Ali', userEmail: 'etudiant1@univ.tn', etat: 'LIBRE', timestampMinutes: 555 - 8 },
+      // B102 was reported OCCUPEE 15 simulated minutes ago
+      { salleNumero: 'B102', userName: 'Mohamed Trabelsi', userEmail: 'etudiant2@univ.tn', etat: 'OCCUPEE', timestampMinutes: 555 - 15 },
+      // C203 was reported LIBRE 42 simulated minutes ago (> 30 min -> triggers INCERTAINE)
+      { salleNumero: 'C203', userName: 'Sarra Ben Ali', userEmail: 'etudiant1@univ.tn', etat: 'LIBRE', timestampMinutes: 555 - 42 }
+    ];
+
+    // Anti-spam cooldown store: key = userEmail + '_' + salleNumero -> expiresAtSimulatedMinutes
+    let USER_COOLDOWNS = {};
+
+    /* =======================================================================
+       2. SIMULATION STATE VARIABLES
+       ======================================================================= */
+    let currentSimDay = 1; // 1 = Lundi
+    let currentSimMinutes = 555; // 09:15 AM (9 * 60 + 15)
+    let isPlaying = false;
+    let playIntervalId = null;
+
+    let selectedRoomNumber = 'A01';
+    let currentBuildingFilter = 'ALL';
+    let currentPlugsFilter = false;
+    let currentFreeOnlyFilter = false;
+    let currentLanguage = 'fr'; // 'fr' or 'en'
+
+    let currentUser = {
+      id: 'student1',
+      name: 'Sarra Ben Ali',
+      email: 'etudiant1@univ.tn',
+      role: 'ETUDIANT'
+    };
+
+    /* =======================================================================
+       3. BILINGUAL DICTIONARY (FR / EN)
+       ======================================================================= */
+    const I18N = {
+      fr: {
+        appTagline: "Système de repérage des salles libres & Simulateur d'affluence",
+        counterLibres: "Libres:",
+        counterIncertaines: "Incertaines:",
+        counterOccupees: "Occupées:",
+        ttTitle: "Moteur Temporel & Chronologie",
+        ttDesc: "Glissez le curseur pour observer les créneaux et l'incertitude crowdsourcée évoluer en temps réel.",
+        ttDayLabel: "Jour:",
+        play: "Lecture",
+        pause: "Pause",
+        tabMap: "Plan Interactif du Campus",
+        tabCsv: "Inspecteur & Validateur CSV (Scolarité)",
+        bldgAll: "Tous (A, B, C)",
+        bldgA: "Bâtiment A",
+        bldgB: "Bâtiment B",
+        bldgC: "Bâtiment C",
+        libre: "LIBRE",
+        incertaine: "INCERTAINE",
+        occupee: "OCCUPÉE",
+        mapHint: "Cliquez sur une salle pour inspecter ou soumettre un signalement",
+        quickLabel: "Accès rapide :",
+        plugsOnly: "Prises ⚡",
+        freeOnly: "Libres seules",
+        schedStatusLabel: "Emploi du temps officiel :",
+        noCourseNow: "Aucun cours programmé actuellement",
+        nextCourseAt: "Prochain cours à",
+        noMoreCourses: "Aucun autre cours aujourd'hui",
+        inCourse: "Cours en cours :",
+        until: "jusqu'à",
+        lastReportLabel: "Dernier signalement étudiant :",
+        agoMinutes: "Il y a {n} min",
+        neverReported: "Aucun signalement récent",
+        byAuthor: "Par : {name}",
+        rule30min: "Bascule en INCERTAINE après 30m",
+        reportBoxTitle: "Signaler la disponibilité",
+        btnReportFree: "Signaler LIBRE",
+        btnReportOcc: "Signaler OCCUPÉE",
+        cooldownFootnote: "Règle B2.4 : Quota strict d'un signalement par salle toutes les 10 minutes par étudiant pour éviter tout spam.",
+        timelineTitle: "📅 Emploi du Temps du Jour :",
+        csvToolTitle: "Inspecteur & Parseur d'Emploi du Temps CSV",
+        csvToolDesc: "Validez la conformité syntaxique et chronologique des imports administratifs selon les spécifications B3.1.",
+        btnLoadValid: "Charger CSV Conforme (10 créneaux)",
+        btnLoadInvalid: "Charger CSV Invalide (Erreur Ligne 4)",
+        csvEditorLabel: "Contenu CSV (séparateur virgule) :",
+        btnRunValidation: "Analyser & Valider",
+        btnImportSim: "Importer dans la Simulation",
+        csvTableTitle: "Rapport d'audit ligne par ligne",
+        guestNotice: "En tant que visiteur anonyme, vous ne pouvez pas soumettre de signalement. Veuillez basculer sur un compte étudiant."
+      },
+      en: {
+        appTagline: "Free Classroom Locator & Real-Time Crowdsourced Simulator",
+        counterLibres: "Free:",
+        counterIncertaines: "Uncertain:",
+        counterOccupees: "Occupied:",
+        ttTitle: "Time-Travel Engine & Timeline",
+        ttDesc: "Drag the slider to watch classroom schedules and crowdsourced uncertainty evolve dynamically.",
+        ttDayLabel: "Day:",
+        play: "Play",
+        pause: "Pause",
+        tabMap: "Interactive Campus Map",
+        tabCsv: "CSV Timetable Inspector & Validator",
+        bldgAll: "All (A, B, C)",
+        bldgA: "Building A",
+        bldgB: "Building B",
+        bldgC: "Building C",
+        libre: "FREE",
+        incertaine: "UNCERTAIN",
+        occupee: "OCCUPIED",
+        mapHint: "Click any room to inspect details or submit crowdsourced reports",
+        quickLabel: "Quick access:",
+        plugsOnly: "Power outlets ⚡",
+        freeOnly: "Free rooms only",
+        schedStatusLabel: "Official timetable status:",
+        noCourseNow: "No scheduled class right now",
+        nextCourseAt: "Next class at",
+        noMoreCourses: "No more classes today",
+        inCourse: "Class in session:",
+        until: "until",
+        lastReportLabel: "Last student report:",
+        agoMinutes: "{n} min ago",
+        neverReported: "No recent reports",
+        byAuthor: "By: {name}",
+        rule30min: "Transitions to UNCERTAIN after 30m",
+        reportBoxTitle: "Report Room Availability",
+        btnReportFree: "Report FREE",
+        btnReportOcc: "Report OCCUPIED",
+        cooldownFootnote: "Rule B2.4: Strict 10-minute cooldown per room per student to prevent spam.",
+        timelineTitle: "📅 Daily Timetable for:",
+        csvToolTitle: "CSV Timetable Inspector & Linter",
+        csvToolDesc: "Verify syntax and chronological integrity of timetable imports per requirement B3.1.",
+        btnLoadValid: "Load Valid CSV (10 slots)",
+        btnLoadInvalid: "Load Invalid CSV (Line 4 Error)",
+        csvEditorLabel: "CSV Content (comma separated):",
+        btnRunValidation: "Analyze & Validate",
+        btnImportSim: "Import into Simulation",
+        csvTableTitle: "Line-by-Line Audit Report",
+        guestNotice: "As an anonymous guest, you cannot submit reports. Please switch to a student account."
+      }
+    };
+
+    /* =======================================================================
+       4. COMPUTATION OF ROOM OCCUPANCY (BUSINESS RULES B2.1 - B2.4)
+       ======================================================================= */
+    function formatMinutesToTime(totalMinutes) {
+      const hours = Math.floor(totalMinutes / 60);
+      const mins = totalMinutes % 60;
+      return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+    }
+
+    function parseTimeToMinutes(timeStr) {
+      const [h, m] = timeStr.split(':').map(Number);
+      return h * 60 + m;
+    }
+
+    function calculateRoomStatus(roomNumber) {
+      const timeStr = formatMinutesToTime(currentSimMinutes);
+
+      // 1. Check official timetable for current sim day
+      const dayCourses = SCHEDULE_COURSES.filter(
+        c => c.salle === roomNumber && c.jour === currentSimDay
+      );
+
+      const activeCourse = dayCourses.find(
+        c => parseTimeToMinutes(c.debut) <= currentSimMinutes && currentSimMinutes < parseTimeToMinutes(c.fin)
+      );
+
+      const nextCourse = dayCourses
+        .filter(c => parseTimeToMinutes(c.debut) > currentSimMinutes)
+        .sort((a, b) => parseTimeToMinutes(a.debut) - parseTimeToMinutes(b.debut))[0];
+
+      // If official class is currently happening, room is unconditionally OCCUPEE
+      if (activeCourse) {
+        return {
+          status: 'OCCUPEE',
+          reason: `Cours en cours: ${activeCourse.matiere}`,
+          activeCourse,
+          nextCourse,
+          lastReport: null,
+          minutesSinceReport: null
+        };
+      }
+
+      // Room is free on the official schedule.
+      // 2. Crowdsourced verification logic (Rule B2.3: 30 minutes freshness threshold)
+      const reports = CROWD_REPORTS
+        .filter(r => r.salleNumero === roomNumber && r.timestampMinutes <= currentSimMinutes)
+        .sort((a, b) => b.timestampMinutes - a.timestampMinutes);
+
+      const latestReport = reports[0];
+
+      if (!latestReport) {
+        // No report at all -> INCERTAINE
+        return {
+          status: 'INCERTAINE',
+          reason: 'Libre à l emploi du temps, aucun signalement récent',
+          activeCourse: null,
+          nextCourse,
+          lastReport: null,
+          minutesSinceReport: null
+        };
+      }
+
+      const minutesSince = currentSimMinutes - latestReport.timestampMinutes;
+
+      if (minutesSince <= 30) {
+        // Recent report within 30 min -> Matches student report
+        return {
+          status: latestReport.etat, // 'LIBRE' or 'OCCUPEE'
+          reason: `Signalé ${latestReport.etat} il y a ${minutesSince} min`,
+          activeCourse: null,
+          nextCourse,
+          lastReport: latestReport,
+          minutesSinceReport: minutesSince
+        };
+      } else {
+        // Older than 30 min -> Transitions to INCERTAINE! (Rule B2.3)
+        return {
+          status: 'INCERTAINE',
+          reason: `Signalement expiré il y a ${minutesSince} min (>30 min)`,
+          activeCourse: null,
+          nextCourse,
+          lastReport: latestReport,
+          minutesSinceReport: minutesSince
+        };
+      }
+    }
+
+    /* =======================================================================
+       5. MAP RENDERING & SVG PULSE UPDATES
+       ======================================================================= */
+    function updateCampusMapVisuals() {
+      let countLibre = 0;
+      let countIncertaine = 0;
+      let countOccupee = 0;
+
+      CAMPUS_ROOMS.forEach(room => {
+        const state = calculateRoomStatus(room.numero);
+
+        if (state.status === 'LIBRE') countLibre++;
+        else if (state.status === 'INCERTAINE') countIncertaine++;
+        else if (state.status === 'OCCUPEE') countOccupee++;
+
+        // Update SVG Dots
+        const dotPing = document.getElementById(`dot-ping-${room.numero}`);
+        const dotSolid = document.getElementById(`dot-solid-${room.numero}`);
+        const roomBox = document.getElementById(`room-box-${room.numero}`);
+
+        if (dotPing && dotSolid) {
+          if (state.status === 'LIBRE') {
+            dotSolid.setAttribute('fill', '#10b981');
+            dotSolid.setAttribute('filter', 'url(#glowGreen)');
+            dotPing.setAttribute('fill', '#10b981');
+            dotPing.classList.remove('hidden');
+          } else if (state.status === 'INCERTAINE') {
+            dotSolid.setAttribute('fill', '#f59e0b');
+            dotSolid.setAttribute('filter', 'url(#glowAmber)');
+            dotPing.setAttribute('fill', '#f59e0b');
+            dotPing.classList.remove('hidden');
+          } else {
+            // OCCUPEE
+            dotSolid.setAttribute('fill', '#ef4444');
+            dotSolid.setAttribute('filter', 'url(#glowRed)');
+            dotPing.setAttribute('fill', '#ef4444');
+            dotPing.classList.add('hidden'); // steady red dot without ping
+          }
+        }
+
+        // Selected room border highlight
+        if (roomBox) {
+          const rect = roomBox.querySelector('rect, path');
+          if (rect) {
+            if (room.numero === selectedRoomNumber) {
+              rect.setAttribute('stroke', '#38bdf8');
+              rect.setAttribute('stroke-width', '2.5');
+            } else {
+              rect.setAttribute('stroke', '#475569');
+              rect.setAttribute('stroke-width', '1.5');
+            }
+          }
+        }
+      });
+
+      // Update counters in top bar
+      document.getElementById('count-libre').textContent = countLibre;
+      document.getElementById('count-incertaine').textContent = countIncertaine;
+      document.getElementById('count-occupee').textContent = countOccupee;
+
+      // Update Room Details Card
+      updateRoomDetailCard();
+    }
+
+    /* =======================================================================
+       6. ROOM DETAIL INSPECTOR & CROWDSOURCING ACTIONS
+       ======================================================================= */
+    function selectRoom(roomNum) {
+      selectedRoomNumber = roomNum;
+      updateCampusMapVisuals();
+      renderRoomTimeline();
+    }
+
+    function updateRoomDetailCard() {
+      const room = CAMPUS_ROOMS.find(r => r.numero === selectedRoomNumber);
+      if (!room) return;
+
+      const state = calculateRoomStatus(room.numero);
+      const dict = I18N[currentLanguage];
+
+      // Header numbers & building
+      document.getElementById('detail-room-number').textContent = room.numero;
+      document.getElementById('detail-building-pill').textContent = `${dict.bldgAll.split(' ')[0]} ${room.batiment}`;
+
+      const plugsText = room.prises ? '⚡ Avec prises électriques' : '❌ Sans prises';
+      document.getElementById('detail-room-specs').textContent = `Capacité ${room.capacite} places • ${plugsText} • ${room.type}`;
+
+      // Status Badge
+      const badge = document.getElementById('detail-status-badge');
+      const badgeText = document.getElementById('detail-status-text');
+      const badgeDot = document.getElementById('detail-status-dot');
+
+      badge.className = 'px-3 py-1.5 rounded-xl font-bold text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-sm ';
+
+      if (state.status === 'LIBRE') {
+        badge.className += 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+        badgeText.textContent = dict.libre;
+        badgeDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+      } else if (state.status === 'INCERTAINE') {
+        badge.className += 'bg-amber-500/20 text-amber-300 border border-amber-500/30';
+        badgeText.textContent = dict.incertaine;
+        badgeDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+      } else {
+        badge.className += 'bg-rose-500/20 text-rose-300 border border-rose-500/30';
+        badgeText.textContent = dict.occupee;
+        badgeDot.className = 'w-2 h-2 rounded-full bg-rose-400';
+      }
+
+      // Schedule Section
+      const schedBadge = document.getElementById('detail-sched-badge');
+      const schedBox = document.getElementById('detail-current-course-box');
+
+      if (state.activeCourse) {
+        schedBadge.textContent = 'Cours en cours';
+        schedBadge.className = 'font-semibold text-rose-400';
+        schedBox.innerHTML = `
+          <div class="flex items-center justify-between text-rose-300">
+            <span>📚 ${state.activeCourse.matiere}</span>
+            <span class="font-mono">${state.activeCourse.debut} - ${state.activeCourse.fin}</span>
+          </div>
+        `;
+      } else {
+        schedBadge.textContent = dict.noCourseNow;
+        schedBadge.className = 'font-semibold text-emerald-400';
+
+        if (state.nextCourse) {
+          schedBox.innerHTML = `
+            <div class="flex items-center justify-between text-slate-300">
+              <span>⏳ ${dict.nextCourseAt} ${state.nextCourse.debut} :</span>
+              <span class="text-blue-300 font-medium">${state.nextCourse.matiere}</span>
+            </div>
+          `;
+        } else {
+          schedBox.innerHTML = `<span class="text-slate-500 italic">${dict.noMoreCourses}</span>`;
+        }
+      }
+
+      // Crowdsourcing Freshness Gauge
+      const crowdTime = document.getElementById('detail-crowd-time');
+      const crowdAuthor = document.getElementById('detail-crowd-author');
+      const freshnessBar = document.getElementById('freshness-bar');
+
+      if (state.lastReport) {
+        const mins = state.minutesSinceReport;
+        crowdTime.textContent = dict.agoMinutes.replace('{n}', mins);
+        crowdAuthor.textContent = dict.byAuthor.replace('{name}', state.lastReport.userName);
+
+        // Freshness percentage: 0 mins = 100%, 30 mins = 0%
+        const freshPct = Math.max(0, Math.min(100, Math.round(((30 - mins) / 30) * 100)));
+        freshnessBar.style.width = `${freshPct}%`;
+
+        if (mins <= 10) {
+          freshnessBar.className = 'bg-emerald-500 h-2 rounded-full transition-all duration-500';
+        } else if (mins <= 30) {
+          freshnessBar.className = 'bg-amber-500 h-2 rounded-full transition-all duration-500';
+        } else {
+          freshnessBar.className = 'bg-rose-500 h-2 rounded-full transition-all duration-500';
+        }
+      } else {
+        crowdTime.textContent = dict.neverReported;
+        crowdAuthor.textContent = '—';
+        freshnessBar.style.width = '0%';
+        freshnessBar.className = 'bg-slate-700 h-2 rounded-full transition-all duration-500';
+      }
+
+      // Check anti-spam cooldown for current user on this room
+      updateCooldownDisplay();
+    }
+
+    function updateCooldownDisplay() {
+      const cooldownKey = `${currentUser.email}_${selectedRoomNumber}`;
+      const expiresAt = USER_COOLDOWNS[cooldownKey] || 0;
+      const cooldownBadge = document.getElementById('cooldown-badge');
+      const timerText = document.getElementById('cooldown-timer-text');
+      const btnFree = document.getElementById('btn-report-free');
+      const btnOcc = document.getElementById('btn-report-occupied');
+
+      const isGuest = currentUser.role === 'GUEST';
+
+      if (isGuest) {
+        btnFree.disabled = true;
+        btnOcc.disabled = true;
+        cooldownBadge.classList.add('hidden');
+        return;
+      }
+
+      if (expiresAt > currentSimMinutes) {
+        const remainingMinutes = expiresAt - currentSimMinutes;
+        cooldownBadge.classList.remove('hidden');
+        cooldownBadge.classList.add('flex');
+        timerText.textContent = `${remainingMinutes}m restantes`;
+        btnFree.disabled = true;
+        btnOcc.disabled = true;
+      } else {
+        cooldownBadge.classList.add('hidden');
+        cooldownBadge.classList.remove('flex');
+        btnFree.disabled = false;
+        btnOcc.disabled = false;
+      }
+    }
+
+    function submitSignalement(etat) {
+      if (currentUser.role === 'GUEST') {
+        showFeedback('warning', I18N[currentLanguage].guestNotice);
+        return;
+      }
+
+      const cooldownKey = `${currentUser.email}_${selectedRoomNumber}`;
+      const expiresAt = USER_COOLDOWNS[cooldownKey] || 0;
+
+      // Rule B2.4: 10 minutes anti-spam cooldown
+      if (expiresAt > currentSimMinutes) {
+        const remaining = expiresAt - currentSimMinutes;
+        showFeedback('error', `Anti-Spam B2.4 : Veuillez patienter ${remaining} minute(s) avant de signaler à nouveau la salle ${selectedRoomNumber}.`);
+        return;
+      }
+
+      // Record report
+      CROWD_REPORTS.unshift({
+        salleNumero: selectedRoomNumber,
+        userName: currentUser.name,
+        userEmail: currentUser.email,
+        etat: etat,
+        timestampMinutes: currentSimMinutes
+      });
+
+      // Set 10-minute cooldown
+      USER_COOLDOWNS[cooldownKey] = currentSimMinutes + 10;
+
+      showFeedback('success', `Succès ! Salle ${selectedRoomNumber} signalée comme ${etat} par ${currentUser.name}. Cooldown anti-spam de 10 min activé.`);
+
+      updateCampusMapVisuals();
+    }
+
+    function showFeedback(type, message) {
+      const banner = document.getElementById('report-feedback-banner');
+      const icon = document.getElementById('feedback-icon');
+      const text = document.getElementById('feedback-text');
+
+      banner.classList.remove('hidden', 'bg-emerald-950/60', 'border-emerald-500/50', 'bg-rose-950/60', 'border-rose-500/50', 'bg-amber-950/60', 'border-amber-500/50');
+
+      if (type === 'success') {
+        banner.classList.add('bg-emerald-950/60', 'border', 'border-emerald-500/50', 'text-emerald-200');
+        icon.textContent = '✅';
+      } else if (type === 'warning') {
+        banner.classList.add('bg-amber-950/60', 'border', 'border-amber-500/50', 'text-amber-200');
+        icon.textContent = '⚠️';
+      } else {
+        banner.classList.add('bg-rose-950/60', 'border', 'border-rose-500/50', 'text-rose-200');
+        icon.textContent = '🛑';
+      }
+
+      text.textContent = message;
+
+      // Auto-hide after 5s
+      setTimeout(() => {
+        banner.classList.add('hidden');
+      }, 5000);
+    }
+
+    /* =======================================================================
+       7. TIMELINE RENDERER FOR SELECTED ROOM
+       ======================================================================= */
+    const DAY_NAMES_FR = ['', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+    const DAY_NAMES_EN = ['', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+    function renderRoomTimeline() {
+      const container = document.getElementById('room-timeline-slots');
+      document.getElementById('timeline-room-name').textContent = selectedRoomNumber;
+
+      const dayName = currentLanguage === 'fr' ? DAY_NAMES_FR[currentSimDay] : DAY_NAMES_EN[currentSimDay];
+      document.getElementById('timeline-day-pill').textContent = dayName;
+
+      const dayCourses = SCHEDULE_COURSES
+        .filter(c => c.salle === selectedRoomNumber && c.jour === currentSimDay)
+        .sort((a, b) => parseTimeToMinutes(a.debut) - parseTimeToMinutes(b.debut));
+
+      if (dayCourses.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-4 text-xs text-slate-500">
+            Aucun cours programmé ce jour pour la salle ${selectedRoomNumber}.
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      dayCourses.forEach(c => {
+        const startMin = parseTimeToMinutes(c.debut);
+        const endMin = parseTimeToMinutes(c.fin);
+        const isCurrent = startMin <= currentSimMinutes && currentSimMinutes < endMin;
+        const isPassed = currentSimMinutes >= endMin;
+
+        let statusClass = 'bg-slate-950/60 border-slate-800 text-slate-300';
+        let badge = '<span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">À venir</span>';
+
+        if (isCurrent) {
+          statusClass = 'bg-rose-950/30 border-rose-500/50 text-rose-200 font-semibold';
+          badge = '<span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse">En cours</span>';
+        } else if (isPassed) {
+          statusClass = 'bg-slate-950/30 border-slate-900 text-slate-500 opacity-60';
+          badge = '<span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-900 text-slate-600">Terminé</span>';
+        }
+
+        html += `
+          <div class="flex items-center justify-between p-2 rounded-xl border text-xs ${statusClass} transition-all">
+            <div class="flex items-center gap-2">
+              <span class="font-mono text-blue-400 font-semibold">${c.debut} - ${c.fin}</span>
+              <span>${c.matiere}</span>
+            </div>
+            <div>${badge}</div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    /* =======================================================================
+       8. TIME TRAVEL CONTROLLER & SIMULATION LOOP
+       ======================================================================= */
+    function onSliderInput(val) {
+      currentSimMinutes = parseInt(val, 10);
+      updateClockDisplay();
+      updateCampusMapVisuals();
+      renderRoomTimeline();
+    }
+
+    function setTimeMinutes(val) {
+      currentSimMinutes = val;
+      document.getElementById('time-slider').value = val;
+      updateClockDisplay();
+      updateCampusMapVisuals();
+      renderRoomTimeline();
+    }
+
+    function advanceTime(minutesToAdd) {
+      currentSimMinutes = Math.min(1200, currentSimMinutes + minutesToAdd);
+      document.getElementById('time-slider').value = currentSimMinutes;
+      updateClockDisplay();
+      updateCampusMapVisuals();
+      renderRoomTimeline();
+    }
+
+    function updateClockDisplay() {
+      document.getElementById('sim-clock-display').textContent = formatMinutesToTime(currentSimMinutes);
+    }
+
+    function onSimDayChange(val) {
+      currentSimDay = parseInt(val, 10);
+      updateCampusMapVisuals();
+      renderRoomTimeline();
+    }
+
+    function togglePlaySimulation() {
+      isPlaying = !isPlaying;
+      const btn = document.getElementById('sim-play-btn');
+      const label = document.getElementById('sim-play-label');
+      const icon = document.getElementById('sim-play-icon');
+
+      if (isPlaying) {
+        label.textContent = currentLanguage === 'fr' ? 'Pause' : 'Pause';
+        btn.classList.replace('bg-blue-600', 'bg-amber-600');
+        btn.classList.replace('hover:bg-blue-500', 'hover:bg-amber-500');
+        icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />`;
+
+        playIntervalId = setInterval(() => {
+          if (currentSimMinutes >= 1200) {
+            currentSimMinutes = 480; // Loop back to 08:00
+          } else {
+            currentSimMinutes += 5;
+          }
+          document.getElementById('time-slider').value = currentSimMinutes;
+          updateClockDisplay();
+          updateCampusMapVisuals();
+          renderRoomTimeline();
+        }, 1200); // 1.2s per 5 sim minutes
+      } else {
+        clearInterval(playIntervalId);
+        label.textContent = currentLanguage === 'fr' ? 'Lecture' : 'Play';
+        btn.classList.replace('bg-amber-600', 'bg-blue-600');
+        btn.classList.replace('hover:bg-amber-500', 'hover:bg-blue-500');
+        icon.innerHTML = `
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        `;
+      }
+    }
+
+    /* =======================================================================
+       9. FILTERS & USER SELECTION
+       ======================================================================= */
+    function setBuildingFilter(bldg) {
+      currentBuildingFilter = bldg;
+
+      ['ALL', 'A', 'B', 'C'].forEach(id => {
+        const btn = document.getElementById(`bfilter-${id}`);
+        if (id === bldg) {
+          btn.className = 'px-3 py-1 rounded-lg bg-blue-600 text-white transition-colors';
+        } else {
+          btn.className = 'px-3 py-1 rounded-lg text-slate-400 hover:text-white transition-colors';
+        }
+      });
+
+      // SVG Building Dimming
+      const bldA = document.getElementById('svg-building-A');
+      const bldB = document.getElementById('svg-building-B');
+      const bldC = document.getElementById('svg-building-C');
+
+      if (bldg === 'ALL') {
+        bldA.style.opacity = '1';
+        bldB.style.opacity = '1';
+        bldC.style.opacity = '1';
+      } else {
+        bldA.style.opacity = bldg === 'A' ? '1' : '0.25';
+        bldB.style.opacity = bldg === 'B' ? '1' : '0.25';
+        bldC.style.opacity = bldg === 'C' ? '1' : '0.25';
+      }
+    }
+
+    function togglePlugsFilter(checked) {
+      currentPlugsFilter = checked;
+      renderQuickPills();
+    }
+
+    function toggleFreeOnlyFilter(checked) {
+      currentFreeOnlyFilter = checked;
+      renderQuickPills();
+    }
+
+    function renderQuickPills() {
+      const container = document.getElementById('quick-room-pills');
+      container.innerHTML = '';
+
+      CAMPUS_ROOMS.forEach(room => {
+        const state = calculateRoomStatus(room.numero);
+
+        if (currentPlugsFilter && !room.prises) return;
+        if (currentFreeOnlyFilter && state.status !== 'LIBRE') return;
+
+        let dotColor = 'bg-emerald-400';
+        if (state.status === 'INCERTAINE') dotColor = 'bg-amber-400';
+        if (state.status === 'OCCUPEE') dotColor = 'bg-rose-400';
+
+        const isSelected = room.numero === selectedRoomNumber;
+        const btn = document.createElement('button');
+        btn.onclick = () => selectRoom(room.numero);
+        btn.className = `px-2 py-1 rounded-lg border text-[11px] font-mono flex items-center gap-1.5 transition-all ${
+          isSelected ? 'bg-blue-600 text-white border-blue-400' : 'bg-slate-900 text-slate-300 border-slate-700/80 hover:bg-slate-800'
+        }`;
+        btn.innerHTML = `
+          <span class="w-1.5 h-1.5 rounded-full ${dotColor}"></span>
+          <span>${room.numero}</span>
+        `;
+        container.appendChild(btn);
+      });
+    }
+
+    function onUserChange(val) {
+      if (val === 'student1') {
+        currentUser = { id: 'student1', name: 'Sarra Ben Ali', email: 'etudiant1@univ.tn', role: 'ETUDIANT' };
+      } else if (val === 'student2') {
+        currentUser = { id: 'student2', name: 'Mohamed Trabelsi', email: 'etudiant2@univ.tn', role: 'ETUDIANT' };
+      } else if (val === 'admin') {
+        currentUser = { id: 'admin', name: 'Mme Nihel', email: 'admin@univ.tn', role: 'ADMIN' };
+      } else {
+        currentUser = { id: 'guest', name: 'Visiteur', email: 'guest@anonyme.tn', role: 'GUEST' };
+      }
+      updateCooldownDisplay();
+    }
+
+    /* =======================================================================
+       10. TIMETABLE CSV INSPECTOR & VALIDATOR ENGINE
+       ======================================================================= */
+    const SAMPLE_CSV_VALID = `salle,jour,heureDebut,heureFin,matiere
+A01,Lundi,08:30,10:00,Génie Logiciel Avancé
+A01,Lundi,10:15,11:45,Systèmes Distribués
+A01,Lundi,14:00,16:30,Atelier Genie Logiciel
+A02,Lundi,08:30,11:45,Algorithmique et Graphes
+B101,Lundi,10:15,13:15,Conception UML
+B102,Mardi,08:30,10:00,Bases de Données Relationnelles
+C101,Mardi,14:00,17:15,Architecture Cloud et Microservices
+C203,Mercredi,08:30,11:45,Sécurité Réseaux
+A01,Jeudi,10:15,11:45,Intelligence Artificielle
+B101,Vendredi,14:00,16:00,Management Agile`;
+
+    const SAMPLE_CSV_INVALID = `salle,jour,heureDebut,heureFin,matiere
+A01,Lundi,08:30,10:00,Génie Logiciel
+A02,Lundi,10:15,11:45,Algorithmique
+B101,Lundi,14:00,12:00,Conception Erronée
+C101,Mardi,08:30,10:00,Bases de Données`;
+
+    const VALID_DAYS = {
+      'lundi': 1, 'monday': 1, '1': 1,
+      'mardi': 2, 'tuesday': 2, '2': 2,
+      'mercredi': 3, 'wednesday': 3, '3': 3,
+      'jeudi': 4, 'thursday': 4, '4': 4,
+      'vendredi': 5, 'friday': 5, '5': 5,
+      'samedi': 6, 'saturday': 6, '6': 6,
+      'dimanche': 7, 'sunday': 7, '7': 7
+    };
+
+    const KNOWN_ROOMS_SET = new Set(CAMPUS_ROOMS.map(r => r.numero));
+    const TIME_REGEX = /^([01]\d|2[0-3]):([0-5]\d)$/;
+
+    function loadSampleCsv(type) {
+      const textarea = document.getElementById('csv-textarea');
+      if (type === 'valid') {
+        textarea.value = SAMPLE_CSV_VALID;
+      } else {
+        textarea.value = SAMPLE_CSV_INVALID;
+      }
+      validateCsvLive();
+    }
+
+    function validateCsvLive() {
+      const text = document.getElementById('csv-textarea').value.trim();
+      const rowsContainer = document.getElementById('csv-inspection-rows');
+      const errorsBadge = document.getElementById('csv-errors-badge');
+      const overallStatus = document.getElementById('csv-overall-status');
+      const explainer = document.getElementById('csv-line4-explainer');
+      const importBtn = document.getElementById('btn-import-sim');
+
+      if (!text) {
+        rowsContainer.innerHTML = '<tr><td colspan="7" class="py-4 text-center text-slate-500 italic">Veuillez coller un contenu CSV ou charger un échantillon.</td></tr>';
+        document.getElementById('csv-line-count').textContent = '0 ligne';
+        errorsBadge.textContent = '0 Erreur';
+        return;
+      }
+
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+      document.getElementById('csv-line-count').textContent = `${lines.length} lignes`;
+
+      let errorCount = 0;
+      let html = '';
+      let hasLine4Error = false;
+
+      // 1. Check Header
+      const headerCols = lines[0].split(',').map(c => c.trim().toLowerCase().replace(/[_\s-]/g, ''));
+      const requiredCols = ['salle', 'jour', 'heuredebut', 'heurefin', 'matiere'];
+      const headerValid = requiredCols.every(c => headerCols.includes(c));
+
+      html += `
+        <tr class="bg-slate-900/50">
+          <td class="py-2.5 px-3 text-center text-slate-400 font-bold">1</td>
+          <td colspan="4" class="py-2.5 px-3 text-slate-300 font-semibold">${lines[0]}</td>
+          <td class="py-2.5 px-3">
+            ${headerValid 
+              ? '<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px]">EN-TÊTE VALIDE</span>' 
+              : '<span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px]">EN-TÊTE INVALIDE</span>'}
+          </td>
+          <td class="py-2.5 px-3 text-[11px] text-slate-400">
+            ${headerValid ? 'Structure 5 colonnes conforme RFC-4180' : 'Colonnes attendues : salle, jour, heureDebut, heureFin, matiere'}
+          </td>
+        </tr>
+      `;
+
+      if (!headerValid) errorCount++;
+
+      // 2. Line by line parsing
+      for (let i = 1; i < lines.length; i++) {
+        const lineNum = i + 1;
+        const line = lines[i];
+        const cols = line.split(',').map(c => c.trim());
+
+        let lineErrors = [];
+
+        if (cols.length < 5) {
+          lineErrors.push(`Attendu 5 colonnes, reçu ${cols.length}`);
+        }
+
+        const salle = (cols[0] || '').toUpperCase();
+        const jourRaw = (cols[1] || '').toLowerCase();
+        const debut = cols[2] || '';
+        const fin = cols[3] || '';
+        const matiere = cols.slice(4).join(',').trim();
+
+        // Room verification
+        if (!KNOWN_ROOMS_SET.has(salle)) {
+          lineErrors.push(`Salle inconnue '${salle}' (doit être A01-C205)`);
+        }
+
+        // Day verification
+        if (!VALID_DAYS[jourRaw]) {
+          lineErrors.push(`Jour inconnu '${cols[1]}'`);
+        }
+
+        // Time format check
+        if (!TIME_REGEX.test(debut)) {
+          lineErrors.push(`Heure début '${debut}' invalide (HH:MM attendu)`);
+        }
+        if (!TIME_REGEX.test(fin)) {
+          lineErrors.push(`Heure fin '${fin}' invalide (HH:MM attendu)`);
+        }
+
+        // Chronological consistency check
+        if (TIME_REGEX.test(debut) && TIME_REGEX.test(fin)) {
+          if (debut >= fin) {
+            lineErrors.push(`Incohérence chronologique : Fin (${fin}) <= Début (${debut})`);
+            if (lineNum === 4) {
+              hasLine4Error = true;
+            }
+          }
+        }
+
+        if (!matiere || matiere.length < 2) {
+          lineErrors.push('Matière absente ou trop courte');
+        }
+
+        const isOk = lineErrors.length === 0;
+        if (!isOk) errorCount++;
+
+        const rowBg = isOk ? 'hover:bg-slate-900/40' : 'bg-rose-950/20 hover:bg-rose-950/30';
+
+        html += `
+          <tr class="${rowBg}">
+            <td class="py-2.5 px-3 text-center ${isOk ? 'text-slate-400' : 'text-rose-400 font-bold'}">${lineNum}</td>
+            <td class="py-2.5 px-3 font-semibold ${KNOWN_ROOMS_SET.has(salle) ? 'text-blue-300' : 'text-rose-400 underline'}">${salle || '—'}</td>
+            <td class="py-2.5 px-3 ${VALID_DAYS[jourRaw] ? 'text-slate-300' : 'text-rose-400'}">${cols[1] || '—'}</td>
+            <td class="py-2.5 px-3 font-mono ${debut >= fin ? 'text-rose-400 font-bold underline' : 'text-slate-300'}">${debut} - ${fin}</td>
+            <td class="py-2.5 px-3 text-slate-200">${matiere || '—'}</td>
+            <td class="py-2.5 px-3">
+              ${isOk 
+                ? '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold">✓ VALIDE</span>' 
+                : '<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[10px] font-bold">✕ ERREUR</span>'}
+            </td>
+            <td class="py-2.5 px-3 text-[11px] ${isOk ? 'text-slate-400' : 'text-rose-300 font-medium'}">
+              ${isOk ? 'Créneau conforme & indexable' : lineErrors.join(' • ')}
+            </td>
+          </tr>
+        `;
+      }
+
+      rowsContainer.innerHTML = html;
+
+      // Update summary cards
+      if (errorCount === 0) {
+        errorsBadge.textContent = '0 Erreur — 100% Conforme';
+        errorsBadge.className = 'text-[11px] px-2 py-0.5 rounded-md font-semibold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
+
+        overallStatus.innerHTML = `
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span class="text-emerald-300">Fichier validé avec succès (${lines.length - 1} créneaux)</span>
+        `;
+        overallStatus.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-950/40 text-emerald-300 border border-emerald-500/40';
+
+        importBtn.disabled = false;
+        explainer.classList.add('hidden');
+      } else {
+        errorsBadge.textContent = `${errorCount} Erreur(s) détectée(s)`;
+        errorsBadge.className = 'text-[11px] px-2 py-0.5 rounded-md font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30';
+
+        overallStatus.innerHTML = `
+          <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+          <span class="text-rose-300">Rejeté : ${errorCount} anomalie(s) bloquante(s)</span>
+        `;
+        overallStatus.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold bg-rose-950/40 text-rose-300 border border-rose-500/40';
+
+        importBtn.disabled = true;
+
+        if (hasLine4Error) {
+          explainer.classList.remove('hidden');
+        } else {
+          explainer.classList.add('hidden');
+        }
+      }
+    }
+
+    function importCsvIntoSimulation() {
+      const text = document.getElementById('csv-textarea').value.trim();
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+
+      const parsedCourses = [];
+      for (let i = 1; i < lines.length; i++) {
+        const cols = lines[i].split(',').map(c => c.trim());
+        const salle = cols[0].toUpperCase();
+        const jour = VALID_DAYS[cols[1].toLowerCase()] || 1;
+        const debut = cols[2];
+        const fin = cols[3];
+        const matiere = cols.slice(4).join(',').trim();
+
+        parsedCourses.push({ salle, jour, debut, fin, matiere });
+      }
+
+      SCHEDULE_COURSES = parsedCourses;
+      alert(`✅ Importation réussie : ${parsedCourses.length} créneaux ont été injectés dans la simulation !`);
+      switchMainTab('map');
+      updateCampusMapVisuals();
+      renderRoomTimeline();
+    }
+
+    /* =======================================================================
+       11. TAB SWITCHER & LANGUAGE TOGGLE
+       ======================================================================= */
+    function switchMainTab(tabId) {
+      const secMap = document.getElementById('section-map');
+      const secCsv = document.getElementById('section-csv');
+      const btnMap = document.getElementById('tab-btn-map');
+      const btnCsv = document.getElementById('tab-btn-csv');
+
+      if (tabId === 'map') {
+        secMap.classList.remove('hidden');
+        secCsv.classList.add('hidden');
+
+        btnMap.className = 'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-blue-600 text-white shadow-md shadow-blue-600/20 transition-all';
+        btnCsv.className = 'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 transition-all';
+      } else {
+        secMap.classList.add('hidden');
+        secCsv.classList.remove('hidden');
+
+        btnCsv.className = 'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-blue-600 text-white shadow-md shadow-blue-600/20 transition-all';
+        btnMap.className = 'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 transition-all';
+
+        // Pre-validate CSV
+        if (!document.getElementById('csv-textarea').value) {
+          loadSampleCsv('invalid');
+        }
+      }
+    }
+
+    function toggleLanguage() {
+      currentLanguage = currentLanguage === 'fr' ? 'en' : 'fr';
+      const dict = I18N[currentLanguage];
+
+      document.getElementById('lang-flag').textContent = currentLanguage === 'fr' ? '🇬🇧' : '🇫🇷';
+      document.getElementById('lang-text').textContent = currentLanguage === 'fr' ? 'EN' : 'FR';
+
+      document.getElementById('app-tagline').textContent = dict.appTagline;
+      document.getElementById('counter-libre-label').textContent = dict.counterLibres;
+      document.getElementById('counter-incertaine-label').textContent = dict.counterIncertaines;
+      document.getElementById('counter-occupee-label').textContent = dict.counterOccupees;
+
+      document.getElementById('tt-title').textContent = dict.ttTitle;
+      document.getElementById('tt-desc').textContent = dict.ttDesc;
+      document.getElementById('tt-day-label').textContent = dict.ttDayLabel;
+      document.getElementById('sim-play-label').textContent = isPlaying ? dict.pause : dict.play;
+
+      document.getElementById('tab-label-map').textContent = dict.tabMap;
+      document.getElementById('tab-label-csv').textContent = dict.tabCsv;
+
+      document.getElementById('bfilter-ALL').textContent = dict.bldgAll;
+      document.getElementById('bfilter-A').textContent = dict.bldgA;
+      document.getElementById('bfilter-B').textContent = dict.bldgB;
+      document.getElementById('bfilter-C').textContent = dict.bldgC;
+
+      document.getElementById('map-hint').textContent = dict.mapHint;
+      document.getElementById('filter-quick-label').textContent = dict.quickLabel;
+      document.getElementById('label-plugs-only').textContent = dict.plugsOnly;
+      document.getElementById('label-free-only').textContent = dict.freeOnly;
+
+      document.getElementById('detail-sched-status-label').textContent = dict.schedStatusLabel;
+      document.getElementById('detail-crowd-label').textContent = dict.lastReportLabel;
+      document.getElementById('detail-crowd-rule').textContent = dict.rule30min;
+
+      document.getElementById('cs-box-title').querySelector('span').textContent = dict.reportBoxTitle;
+      document.getElementById('btn-report-free-text').textContent = dict.btnReportFree;
+      document.getElementById('btn-report-occ-text').textContent = dict.btnReportOcc;
+      document.getElementById('cooldown-footnote').textContent = dict.cooldownFootnote;
+
+      document.getElementById('timeline-title').querySelector('span').textContent = dict.timelineTitle;
+
+      document.getElementById('csv-tool-title').textContent = dict.csvToolTitle;
+      document.getElementById('csv-tool-desc').textContent = dict.csvToolDesc;
+      document.getElementById('btn-load-valid-csv').textContent = dict.btnLoadValid;
+      document.getElementById('btn-load-invalid-csv').textContent = dict.btnLoadInvalid;
+      document.getElementById('csv-editor-label').querySelector('span').textContent = dict.csvEditorLabel;
+      document.getElementById('btn-run-validation').querySelector('span').textContent = dict.btnRunValidation;
+      document.getElementById('btn-import-sim-text').textContent = dict.btnImportSim;
+      document.getElementById('csv-table-title').textContent = dict.csvTableTitle;
+
+      // Update days in select dropdown
+      const daySelect = document.getElementById('sim-day-select');
+      const days = currentLanguage === 'fr' ? DAY_NAMES_FR : DAY_NAMES_EN;
+      for (let i = 1; i <= 6; i++) {
+        daySelect.options[i - 1].textContent = days[i];
+      }
+
+      updateCampusMapVisuals();
+      renderRoomTimeline();
+    }
+
+    /* =======================================================================
+       12. INITIALIZATION
+       ======================================================================= */
+    window.addEventListener('DOMContentLoaded', () => {
+      renderQuickPills();
+      updateClockDisplay();
+      updateCampusMapVisuals();
+      renderRoomTimeline();
+      loadSampleCsv('invalid');
+    });
+  </script>
+</body>
+</html>

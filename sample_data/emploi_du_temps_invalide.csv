@@ -1,0 +1,5 @@
+salle,jour,heureDebut,heureFin,matiere
+A01,Lundi,08:30,10:00,Génie Logiciel
+A02,Lundi,10:15,11:45,Algorithmique
+B101,Lundi,14:00,12:00,Conception Erronée
+C101,Mardi,08:30,10:00,Bases de Données
